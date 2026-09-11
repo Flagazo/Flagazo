@@ -258,14 +258,17 @@ rinde centavos con publicidad display. No es plata, es una curiosidad.
 
 Aparte de la publicidad hay un botón de donar, abajo de todo en el menú. Es un enlace
 común y silvestre: no carga scripts, no rastrea a nadie y sirve con cualquier plataforma
-(Cafecito, Ko-fi, PayPal, Mercado Pago). Se activa con una variable más en `client/.env`:
+(Cafecito, Ko-fi, PayPal, Mercado Pago).
+
+Por defecto apunta a la página de Flagazo. Para mandarlo a otro lado, o para sacarlo,
+está `VITE_DONATE_URL` en `client/.env`:
 
 ```
 VITE_DONATE_URL=https://cafecito.app/tu-usuario
 ```
 
-**Sin `VITE_DONATE_URL` el botón no existe**: no se dibuja ni queda en el bundle. Nunca
-aparece un botón que no lleva a ningún lado.
+Dejándola **vacía** el botón no se dibuja ni queda en el bundle, que es la forma de
+sacarlo sin tocar el código.
 
 Está en el menú y no en la pantalla final a propósito: ahí ya hay un espacio de anuncio, y
 dos pedidos de plata juntos justo cuando alguien acaba de ganar o perder se sienten a

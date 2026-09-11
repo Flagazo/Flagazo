@@ -480,10 +480,15 @@ Dos espacios: el lobby y la pantalla final. Los dibuja `client/src/components/Ad
 `client/src/components/DonateButton.tsx`. Un `<a>` a una URL que viene de
 `VITE_DONATE_URL`; si no está configurada, el componente devuelve `null`.
 
-> **Decisión.** El destino va por entorno y no en el código porque cambia según quién
-> despliegue, y así el repositorio no lleva el link de cobro de nadie. Como Vite reemplaza
-> `import.meta.env.VITE_*` en tiempo de compilación, sin configurar no queda ni el markup
-> ni los estilos del botón en el bundle: no es que se esconda, es que no existe.
+> **Decisión.** El destino por defecto está en el código y `VITE_DONATE_URL` lo pisa.
+> Al principio iba **solo** por entorno, para que el repositorio no llevara el link de
+> cobro de nadie. Salió mal: en el primer despliegue la variable no quedó cargada y el
+> botón simplemente no apareció, sin ningún error que lo delatara. El link no es un
+> secreto —es un botón hecho para que lo vean— así que no había nada que proteger y sí
+> un modo de fallar en silencio. El entorno queda para quien copie el proyecto.
+>
+> Con la variable en vacío no queda ni el markup ni los estilos en el bundle, porque Vite
+> reemplaza `import.meta.env.VITE_*` al compilar: no es que se esconda, es que no existe.
 
 > **Decisión.** Está en el **menú** y no en la pantalla final. En la final ya hay un
 > espacio de anuncio; dos pedidos de plata en la misma pantalla, justo cuando la persona
