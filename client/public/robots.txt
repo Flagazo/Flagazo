@@ -1,0 +1,8 @@
+# Todo el sitio es público y se puede indexar: es un juego, no hay nada privado.
+User-agent: *
+Allow: /
+
+# Las banderas no aportan nada en una búsqueda de imágenes y son 196 archivos.
+Disallow: /flags/
+
+Sitemap: https://flagazo.onrender.com/sitemap.xml

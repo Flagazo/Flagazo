@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Una sola dirección: el juego entero vive en una página y las pantallas son
+  estados internos, no URLs distintas. No hay nada más que ofrecerle a Google.
+
+  Si algún día flagazo.com apunta al juego, cambiar la dirección de acá, la de
+  robots.txt y las de index.html: son las tres cosas que hay que mover juntas.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://flagazo.onrender.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

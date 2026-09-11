@@ -4,10 +4,63 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0f1a" />
-    <!-- El idioma real lo pone el store al arrancar; esto es lo que ven los buscadores. -->
-    <meta name="description" content="Multiplayer party game: name the flags before your friends do." />
+
+    <!--
+      Esto es lo único que ven los buscadores y las vistas previas de WhatsApp,
+      Discord o Twitter: el juego se dibuja con JavaScript, pero el título, la
+      descripción y la imagen tienen que estar acá, en el HTML, ya escritos.
+
+      OJO con la dirección: mientras el juego viva en onrender.com, todas las
+      URL de acá abajo tienen que decir onrender.com. El día que flagazo.com
+      esté apuntando de verdad al juego, hay que cambiarlas — si se cambian
+      antes, Google va a buscar una página que todavía no existe.
+    -->
+    <title>Flagazo · Multiplayer flag guessing game</title>
+    <meta
+      name="description"
+      content="Free multiplayer party game: name the flags of the world faster than your friends. Up to 12 players, seven game modes, no account needed."
+    />
+    <link rel="canonical" href="https://flagazo.onrender.com/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Flagazo" />
+    <meta property="og:url" content="https://flagazo.onrender.com/" />
+    <meta property="og:title" content="Flagazo · Multiplayer flag guessing game" />
+    <meta
+      property="og:description"
+      content="How many flags can you name before your friends do? Free, up to 12 players, no account needed."
+    />
+    <meta property="og:image" content="https://flagazo.onrender.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Flagazo" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Flagazo</title>
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+
+    <!--
+      Ficha para Google. Sirve para que entienda que esto es un juego jugable en
+      el navegador y no una página cualquiera que menciona banderas.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Flagazo",
+        "url": "https://flagazo.onrender.com/",
+        "description": "Free multiplayer party game: name the flags of the world faster than your friends.",
+        "image": "https://flagazo.onrender.com/og.png",
+        "genre": "Party game",
+        "playMode": "MultiPlayer",
+        "gamePlatform": "Web browser",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "inLanguage": ["en", "es"],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

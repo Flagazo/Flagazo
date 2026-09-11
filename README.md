@@ -419,3 +419,23 @@ flagazo/
   está en [`server/flags/FUENTE.md`](server/flags/FUENTE.md). La enorme mayoría de las
   banderas nacionales son de dominio público.
 - Tipografías: Lilita One y Nunito vía [Fontsource](https://fontsource.org) — SIL Open Font License.
+
+## Que Google lo encuentre
+
+El juego se dibuja con JavaScript, así que lo único que ven los buscadores y las
+vistas previas de WhatsApp o Discord es lo que está escrito en `client/index.html`:
+título, descripción, imagen de vista previa (`og.png`) y una ficha de datos
+estructurados que le dice a Google que esto es un juego jugable en el navegador.
+
+Además hay `client/public/robots.txt` y `client/public/sitemap.xml`.
+
+**Las direcciones están escritas a mano en tres lugares** y tienen que decir todas
+lo mismo: `index.html` (canonical y las etiquetas `og:`), `robots.txt` y
+`sitemap.xml`. Mientras el juego viva en `onrender.com`, las tres dicen
+`onrender.com`. El día que el dominio propio apunte de verdad al juego, se cambian
+las tres juntas — antes no, o Google va a buscar una página que todavía no existe.
+
+Con esto puesto, el paso que no se resuelve programando es darlo de alta en
+[Google Search Console](https://search.google.com/search-console): verificar el
+sitio, mandar el sitemap y pedir la indexación. Sin eso, aparecer puede tardar
+semanas; con eso, suele ser cuestión de días.
