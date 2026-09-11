@@ -5,4 +5,4 @@ Allow: /
 # Las banderas no aportan nada en una búsqueda de imágenes y son 196 archivos.
 Disallow: /flags/
 
-Sitemap: https://flagazo.onrender.com/sitemap.xml
+Sitemap: https://flagazo.com/sitemap.xml

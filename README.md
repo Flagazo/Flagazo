@@ -431,9 +431,9 @@ Además hay `client/public/robots.txt` y `client/public/sitemap.xml`.
 
 **Las direcciones están escritas a mano en tres lugares** y tienen que decir todas
 lo mismo: `index.html` (canonical y las etiquetas `og:`), `robots.txt` y
-`sitemap.xml`. Mientras el juego viva en `onrender.com`, las tres dicen
-`onrender.com`. El día que el dominio propio apunte de verdad al juego, se cambian
-las tres juntas — antes no, o Google va a buscar una página que todavía no existe.
+`sitemap.xml`. Hoy apuntan a `https://flagazo.com`. Si el dominio cambia, se
+cambian las tres juntas, y recién cuando el dominio nuevo ya responda — antes no,
+o Google va a buscar una página que todavía no existe.
 
 Con esto puesto, el paso que no se resuelve programando es darlo de alta en
 [Google Search Console](https://search.google.com/search-console): verificar el
