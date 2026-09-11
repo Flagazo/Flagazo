@@ -1,0 +1,498 @@
+.lobby-screen {
+  justify-content: flex-start;
+  gap: 18px;
+  max-width: 720px;
+}
+
+/* ── Código de la party ──────────────────────────────── */
+
+.lobby-code {
+  width: 100%;
+  padding: 20px 22px 22px;
+  text-align: center;
+  animation: pop-in 420ms var(--ease-pop) both;
+}
+
+.lobby-code__label {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.lobby-code__value {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 11vw, 3.6rem);
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms var(--ease-pop);
+}
+
+.lobby-code__value:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.lobby-code__copy {
+  font-size: 1.4rem;
+  opacity: 0.65;
+}
+
+.lobby-code__hint {
+  margin: 4px 0 0;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+/* ── Paneles ─────────────────────────────────────────── */
+
+.lobby-panel {
+  width: 100%;
+  padding: 20px 22px 22px;
+  animation: pop-in 460ms var(--ease-pop) both;
+  animation-delay: 80ms;
+}
+
+.lobby-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.lobby-panel__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+.lobby-panel__count {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+/* ── Lista de jugadores ──────────────────────────────── */
+
+.player-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(var(--sunken-rgb), 0.35);
+  animation: pop-in 300ms var(--ease-pop) both;
+}
+
+.player-row--away {
+  opacity: 0.5;
+}
+
+.player-row__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: var(--text-on-bright);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+}
+
+.player-row--away .player-row__avatar {
+  filter: grayscale(1);
+}
+
+.player-row__name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-row__tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.player-row__crown {
+  flex: none;
+  font-size: 1.1rem;
+}
+
+.player-row__status {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.player-row__kick {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 90, 95, 0.16);
+  color: var(--red);
+  font-size: 0.95rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms var(--ease-pop);
+}
+
+.player-row__kick:hover {
+  background: var(--red);
+  color: #fff;
+  transform: scale(1.08);
+}
+
+/* ── Configuración ───────────────────────────────────── */
+
+.lobby-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+
+.lobby-summary {
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--surface-border);
+  text-align: center;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+/* ── Acciones ────────────────────────────────────────── */
+
+.lobby-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding-bottom: 8px;
+}
+
+.lobby-actions .btn--lg {
+  flex: 1;
+  max-width: 380px;
+}
+
+@media (max-width: 640px) {
+  .lobby-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-panel,
+  .lobby-code {
+    padding: 18px 16px 20px;
+  }
+
+  .lobby-actions {
+    flex-direction: column-reverse;
+  }
+
+  .lobby-actions .btn {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* ── Ocultar el código (para compartir pantalla) ──────── */
+
+.lobby-code__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.lobby-code__masked {
+  /* Los puntos son más angostos que las letras: esto evita que el bloque salte. */
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.lobby-code__eye {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: background 120ms ease, opacity 120ms ease, transform 120ms var(--ease-pop);
+}
+
+.lobby-code__eye:hover {
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+@media (max-width: 640px) {
+  .lobby-code__row {
+    gap: 2px;
+  }
+
+  .lobby-code__value {
+    padding-inline: 10px;
+  }
+}
+
+/* ── Selector de modo ────────────────────────────────── */
+
+.mode-picker {
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.mode-picker__label {
+  padding: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/*
+ * Una columna por modo, siempre en una sola línea.
+ *
+ * Antes era `auto-fit` con un mínimo de 96px: al llegar al séptimo modo ya no
+ * entraban en el ancho del panel y el último caía a una segunda fila, solo,
+ * como si fuera de otra categoría. Con `grid-auto-flow: column` la cantidad de
+ * columnas la decide la cantidad de modos, no el ancho disponible, así que
+ * agregar o sacar uno no vuelve a romper la fila.
+ */
+.mode-picker__options {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.mode-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  /* Poco relleno lateral: lo que sobra de ancho va al nombre. */
+  padding: 9px 4px;
+  min-width: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+  background: rgba(var(--sunken-rgb), 0.4);
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, transform 130ms var(--ease-pop);
+}
+
+.mode-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.mode-option--selected {
+  background: rgba(255, 201, 60, 0.16);
+  border-color: var(--yellow);
+}
+
+.mode-option__emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.mode-option__name {
+  /* Se achica sola en pantallas angostas en vez de desbordar la columna. */
+  font-size: clamp(0.6rem, 1.15vw, 0.78rem);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.15;
+  color: var(--text-soft);
+  /*
+   * Un nombre largo parte en dos renglones antes que salirse, pero con guion y
+   * por sílabas: el idioma sale del `lang` del documento, que el store pone al
+   * elegir idioma. Sin esto el corte era a lo bruto ("Norma l", "Bomb a").
+   */
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.mode-option--selected .mode-option__name {
+  color: var(--yellow);
+}
+
+/* Sin host, el selector se ve pero no se toca. */
+.mode-option:has(:disabled) {
+  cursor: default;
+}
+
+.mode-option:has(:disabled):hover {
+  background: rgba(var(--sunken-rgb), 0.4);
+  transform: none;
+}
+
+.mode-option--selected:has(:disabled):hover {
+  background: rgba(255, 201, 60, 0.16);
+}
+
+.mode-option:has(:focus-visible) {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.mode-picker__description {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  min-height: 2.2em;
+}
+
+/* ── Pública o privada ─────────────────────────────────────── */
+
+.lobby-visibility {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.lobby-visibility__options {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.lobby-visibility__option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.lobby-visibility__option:hover:not(:disabled) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lobby-visibility__option--selected,
+.lobby-visibility__option--selected:hover:not(:disabled) {
+  background: var(--cyan);
+  color: var(--bg-deep);
+}
+
+.lobby-visibility__option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.lobby-visibility__badge {
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+.lobby-visibility__hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.mode-picker__current {
+  color: var(--yellow);
+}
+
+/* Un separador que no hay que escribir en cada idioma. */
+.mode-picker__current::after {
+  content: ' · ';
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/*
+ * En pantallas angostas la casilla se queda solo con el emoji.
+ *
+ * Con siete modos y ~40px por columna no entra ningún nombre legible: medido,
+ * hasta a 7,5px —ya ilegible— "Recortada" se sale de su casilla. Antes que
+ * partir las palabras a la mitad o dejarlas pisar la casilla de al lado, el
+ * nombre se lee completo en el renglón de abajo, que además dice qué hace.
+ */
+@media (max-width: 620px) {
+  .mode-option__name {
+    display: none;
+  }
+
+  .mode-option {
+    /* Sin texto, la casilla puede ser más alta y cómoda de tocar. */
+    padding: 12px 4px;
+  }
+
+  .mode-option__emoji {
+    font-size: 1.45rem;
+  }
+}

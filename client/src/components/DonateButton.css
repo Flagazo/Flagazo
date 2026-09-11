@@ -1,0 +1,90 @@
+/*
+ * Deliberadamente más callado que los botones de acción: tiene que estar a mano,
+ * no competir con "Crear sala". Por eso no usa ninguno de los colores fuertes.
+ */
+.donate {
+  /* El ancho del ícono y el hueco viven acá porque el layout móvil de abajo
+     alinea el texto y el botón contra ellos. Separados, se desincronizan. */
+  --icon: 42px;
+  --gap: 12px;
+
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  background: rgba(var(--panel-rgb), 0.6);
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms var(--ease-pop);
+}
+
+.donate:hover {
+  background: rgba(var(--panel-rgb), 0.9);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+}
+
+/*
+ * El fondo va tintado de naranja y no en el gris de panel como los otros badges:
+ * el ☕ es marrón oscuro y sobre un fondo oscuro se pierde, mientras que el 🌐 o
+ * el 🔑 se sostienen solos. El tinte le da el contraste que al emoji le falta,
+ * y de paso lo emparenta con el naranja del "Donar" del otro extremo.
+ */
+.donate__icon {
+  display: grid;
+  place-items: center;
+  width: var(--icon);
+  height: var(--icon);
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--orange) 22%, transparent);
+  font-size: 1.3rem;
+}
+
+.donate__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.donate__text strong {
+  font-size: 0.92rem;
+}
+
+.donate__text small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+/* El "Donar" hereda el naranja del logo: es el único color que se permite. */
+.donate__cta {
+  flex: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--text-on-warm);
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 560px) {
+  .donate {
+    flex-wrap: wrap;
+  }
+
+  .donate__text {
+    flex-basis: calc(100% - var(--icon) - var(--gap));
+  }
+
+  /* El botón cae a la línea de abajo y se alinea con el texto, no con el ícono. */
+  .donate__cta {
+    margin-left: calc(var(--icon) + var(--gap));
+  }
+}

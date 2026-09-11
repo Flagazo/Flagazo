@@ -1,0 +1,64 @@
+.conn {
+  --dot: var(--yellow);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 12px;
+  border-radius: 999px;
+  background: rgba(var(--panel-rgb), 0.72);
+  border: 1px solid var(--surface-border);
+  backdrop-filter: blur(8px);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.conn__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 0 0 var(--dot);
+}
+
+.conn--connected {
+  --dot: var(--green);
+}
+
+.conn--connecting .conn__dot,
+.conn--reconnecting .conn__dot {
+  animation: conn-pulse 1s ease-out infinite;
+}
+
+.conn--offline {
+  --dot: var(--red);
+}
+
+.conn__sep {
+  width: 1px;
+  height: 14px;
+  background: var(--surface-border);
+}
+
+.conn__stat {
+  color: var(--text-soft);
+}
+
+@keyframes conn-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--dot) 70%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+@media (max-width: 480px) {
+  .conn {
+    font-size: 0.78rem;
+    padding: 6px 12px 6px 10px;
+  }
+  .conn__ping {
+    display: none;
+  }
+}

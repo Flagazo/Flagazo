@@ -1,0 +1,36 @@
+/*
+ * El espacio se reserva desde el principio con `min-height`.
+ *
+ * Si el anuncio apareciera de golpe empujando los botones hacia abajo, alguien
+ * que está por tocar "Empezar" termina tocando otra cosa. Además el salto de
+ * layout es algo que las propias redes penalizan.
+ */
+.ad-slot {
+  width: 100%;
+  min-height: 100px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+/* A partir de tablet entra el formato ancho, que es más bajo. */
+@media (min-width: 760px) {
+  .ad-slot {
+    min-height: 90px;
+  }
+}
+
+.ad-slot__unit {
+  width: 100%;
+}
+
+/* Solo en desarrollo: el hueco dibujado, para ver cómo queda la pantalla. */
+.ad-slot--placeholder {
+  border: 1px dashed var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

@@ -1,0 +1,18 @@
+# Qué NO entra al grafo de conocimiento.
+#
+# La idea es que el grafo tenga el diseño del juego, no sus datos: las 195
+# banderas son activos descargados de Wikimedia y el dataset de países está
+# generado por script. Ninguno aporta una relación que no esté ya escrita en
+# el código que los usa, y en cambio son lo más caro de extraer (cada imagen
+# va en su propio lote de visión).
+
+# Las banderas y el favicon: imágenes, no conocimiento.
+server/flags/*.svg
+client/public/*.svg
+
+# Dataset generado por `npm run build:countries` (400 KB de nombres en 78 idiomas).
+server/src/data/countries.json
+
+# Salidas de build y bloqueos de dependencias.
+package-lock.json
+dist/

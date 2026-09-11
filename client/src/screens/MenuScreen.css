@@ -1,0 +1,256 @@
+.player-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 8px;
+  border-radius: 999px;
+  background: rgba(var(--panel-rgb), 0.72);
+  border: 1px solid var(--surface-border);
+  backdrop-filter: blur(8px);
+  animation: pop-in 380ms var(--ease-pop) both;
+}
+
+.player-chip__avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--text-on-bright);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.18);
+}
+
+.player-chip__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  padding-right: 6px;
+}
+
+.player-chip__text small {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.player-chip__text strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.player-chip__edit {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.player-chip__edit:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  width: min(100%, 820px);
+}
+
+.menu-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 30px 24px 28px;
+  overflow: hidden;
+  animation: pop-in 460ms var(--ease-pop) both;
+}
+
+.menu-card--join {
+  animation-delay: 90ms;
+}
+
+.menu-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--card-accent);
+}
+
+.menu-card--create {
+  --card-accent: var(--pink);
+}
+
+.menu-card--join {
+  --card-accent: var(--cyan);
+}
+
+.menu-card__badge {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card-accent) 22%, transparent);
+  font-size: 1.9rem;
+  transform: rotate(-6deg);
+}
+
+.menu-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 4vw, 2.1rem);
+  letter-spacing: 0.02em;
+}
+
+.menu-card__text {
+  flex: 1;
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+/*
+ * El sobrante de la tarjeta de "entrar con código" se reparte arriba y abajo
+ * del campo, en vez de amontonarse al pie.
+ *
+ * En la de crear ese hueco lo absorbe `.menu-card__text` (flex: 1), pero acá no
+ * hay ningún párrafo que empuje: el contenido quedaba apretado contra el título
+ * y el botón a media altura, desalineado del de al lado. Con `margin-block: auto`
+ * el campo queda centrado en el espacio libre y los dos botones principales
+ * terminan a la misma altura.
+ */
+.menu-card--join .code-input {
+  margin-block: auto;
+}
+
+@media (max-width: 720px) {
+  .menu-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .menu-card {
+    padding: 24px 18px 22px;
+  }
+}
+
+/* ── Pública o privada, al crear ───────────────────────────── */
+
+.visibility {
+  border: 0;
+  margin: 0 0 4px;
+  padding: 0;
+  text-align: left;
+}
+
+.visibility__label {
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.visibility__options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.visibility__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 6px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  font-weight: 800;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.visibility__option:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.visibility__option--selected {
+  background: var(--cyan);
+  border-color: var(--cyan);
+  color: var(--bg-deep);
+}
+
+.visibility__hint {
+  margin: 6px 0 0;
+  min-height: 2.2em;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+/* ── Entrada al buscador de salas públicas ─────────────────── */
+
+.menu-browse {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.menu-browse__badge {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 1.4rem;
+}
+
+.menu-browse__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-browse__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.menu-browse__hint {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 560px) {
+  .menu-browse {
+    flex-wrap: wrap;
+  }
+
+  .menu-browse__text {
+    flex-basis: calc(100% - 60px);
+  }
+}

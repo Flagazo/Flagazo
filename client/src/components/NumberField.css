@@ -1,0 +1,93 @@
+.number-field {
+  min-width: 0;
+}
+
+.number-field__label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.number-field__hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.number-field__control {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(var(--sunken-rgb), 0.45);
+  border: 1px solid var(--surface-border);
+}
+
+.number-field__step {
+  display: grid;
+  place-items: center;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 120ms ease, transform 120ms var(--ease-pop);
+}
+
+.number-field__step:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.number-field__step:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.number-field__input {
+  width: 100%;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+  cursor: text;
+}
+
+.number-field__input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.number-field__input:disabled {
+  cursor: default;
+  color: var(--yellow);
+  opacity: 0.75;
+  -webkit-text-fill-color: var(--yellow);
+}
+
+/* Solo el host edita: el resto ve el número sin poder tocarlo. */
+.number-field--readonly .number-field__step {
+  display: none;
+}
+
+.number-field--readonly .number-field__control {
+  grid-template-columns: 1fr;
+}

@@ -1,0 +1,67 @@
+/* Tokens visuales del juego. Cambiar la paleta acá la cambia en toda la UI. */
+:root {
+  /* Fondo. Azul profundo neutro: el violeta teñía las banderas de arriba. */
+  --bg-deep: #04060d;
+  --bg: #0a0f1a;
+  --bg-glow: #16243f;
+  /*
+   * El resplandor de la esquina de abajo. Era rosa escrito a mano y sobre el
+   * fondo neutro teñía de magenta media pantalla, que es parte de lo que no
+   * cerraba del fondo. Frío y flojo: el color lo ponen las banderas.
+   */
+  --bg-accent: rgba(53, 214, 255, 0.09);
+
+  /* Superficies */
+  --surface: #131a28;
+  --surface-2: #1b2435;
+  /*
+   * Los dos rellenos translúcidos que antes estaban escritos a mano en diez
+   * archivos. Van como tripletas RGB y no como color porque cada lugar los usa
+   * con su propia opacidad: `rgba(var(--panel-rgb), 0.72)`.
+   *
+   * --panel: lo que flota por encima del fondo (chips, barra superior).
+   * --sunken: los huecos hundidos dentro de una tarjeta.
+   */
+  --panel-rgb: 16, 22, 36;
+  --sunken-rgb: 6, 10, 18;
+  /* Para texto sobre un color fuerte (iniciales en los avatares). */
+  --text-on-bright: #101722;
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --surface-shadow: rgba(0, 0, 0, 0.6);
+
+  /* Colores de juego */
+  --yellow: #ffc93c;
+  --yellow-dark: #c98a00;
+  --pink: #ff4f8b;
+  /* El otro extremo del degradé del logo y del ícono. */
+  --orange: #ff9f1c;
+  --orange-dark: #c26a00;
+  --pink-dark: #b81f58;
+  --cyan: #35d6ff;
+  --cyan-dark: #0f8fb8;
+  --green: #2ee59d;
+  --green-dark: #10a36a;
+  --red: #ff5a5f;
+  --red-dark: #b3262b;
+  --violet: #b78cff;
+
+  /* Texto */
+  --text: #ffffff;
+  --text-soft: rgba(255, 255, 255, 0.72);
+  --text-muted: rgba(255, 255, 255, 0.48);
+  --text-on-warm: #3a2300;
+
+  /* Tipografía */
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
+  --font-body: 'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Forma */
+  --radius-sm: 12px;
+  --radius: 20px;
+  --radius-lg: 28px;
+  --press-depth: 6px;
+
+  /* Movimiento */
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}

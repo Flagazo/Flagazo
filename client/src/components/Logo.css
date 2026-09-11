@@ -1,0 +1,102 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18em;
+  font-family: var(--font-display);
+  line-height: 1;
+  transform: rotate(-4deg);
+  user-select: none;
+}
+
+.logo--lg {
+  font-size: clamp(3rem, 12vw, 6.2rem);
+}
+
+.logo--sm {
+  font-size: 1.7rem;
+  transform: rotate(-3deg);
+}
+
+.logo__flag {
+  width: 0.95em;
+  height: 0.95em;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0.06em 0 rgba(0, 0, 0, 0.35));
+}
+
+.logo__cloth {
+  transform-origin: 16px 20px;
+  animation: flag-wave 1.8s ease-in-out infinite;
+}
+
+.logo__word {
+  display: inline-flex;
+}
+
+/*
+ * La palabra recorre el mismo degradé que el ícono: la primera letra sale rosa y
+ * la última naranja.
+ *
+ * El color de cada letra se calcula de su posición (`--i` sobre `--last`, que
+ * pone el componente) en vez de escribirse a mano, así los dos extremos siguen
+ * viviendo solo en `theme.css` y cambiar el degradé cambia el ícono y la palabra
+ * a la vez. El relieve es la misma tinta mezclada con negro, por lo mismo.
+ *
+ * Antes eran amarillas con una de cada cuatro en blanco y sombra violeta: ese
+ * violeta venía de la paleta vieja y quedó desentonando con todo lo demás.
+ */
+.logo__letter {
+  --t: calc(var(--i) / var(--last));
+  --ink: color-mix(in oklab, var(--pink) calc((1 - var(--t)) * 100%), var(--orange));
+  display: inline-block;
+  color: var(--ink);
+  text-shadow:
+    0 0.04em 0 color-mix(in oklab, var(--ink) 62%, #000),
+    0 0.08em 0 color-mix(in oklab, var(--ink) 32%, #000),
+    0 0.14em 0.12em rgba(0, 0, 0, 0.45);
+  -webkit-text-stroke: 0.012em rgba(0, 0, 0, 0.28);
+  animation: letter-drop 620ms var(--ease-pop) both;
+}
+
+.logo--sm .logo__letter {
+  animation: none;
+}
+
+@keyframes flag-wave {
+  0%,
+  100% {
+    transform: skewY(0deg) scaleX(1);
+  }
+  50% {
+    transform: skewY(-5deg) scaleX(0.94);
+  }
+}
+
+@keyframes letter-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.6em) rotate(-12deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* El logo de la barra superior lleva al menú. */
+.logo--button {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 140ms var(--ease-pop), filter 140ms ease;
+}
+
+.logo--button:hover {
+  transform: scale(1.05);
+  filter: brightness(1.12);
+}
+
+.logo--button:active {
+  transform: scale(0.97);
+}

@@ -1,0 +1,103 @@
+/*
+ * El botón sin variante usa el naranja del degradé del logo, no el amarillo.
+ * Son solo dos en todo el juego —JUGAR y Enviar— y los dos son la acción
+ * principal de su pantalla, así que conviene que sean del color de la marca.
+ */
+.btn {
+  --btn-bg: var(--orange);
+  --btn-edge: var(--orange-dark);
+  --btn-text: var(--text-on-warm);
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  box-shadow:
+    0 var(--press-depth) 0 var(--btn-edge),
+    0 calc(var(--press-depth) + 10px) 22px rgba(0, 0, 0, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(0);
+  transition:
+    transform 90ms ease,
+    box-shadow 90ms ease,
+    filter 150ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow:
+    0 calc(var(--press-depth) + 2px) 0 var(--btn-edge),
+    0 calc(var(--press-depth) + 14px) 26px rgba(0, 0, 0, 0.38),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(var(--press-depth));
+  box-shadow:
+    0 0 0 var(--btn-edge),
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.25);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.7) brightness(0.8);
+  opacity: 0.7;
+}
+
+.btn--md {
+  min-height: 48px;
+  padding: 10px 22px;
+  font-size: 1.05rem;
+}
+
+.btn--lg {
+  min-height: 64px;
+  padding: 14px 32px;
+  font-size: 1.45rem;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn__icon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.btn--pink {
+  --btn-bg: var(--pink);
+  --btn-edge: var(--pink-dark);
+  --btn-text: #fff;
+}
+
+.btn--cyan {
+  --btn-bg: var(--cyan);
+  --btn-edge: var(--cyan-dark);
+  --btn-text: #062a3a;
+}
+
+.btn--green {
+  --btn-bg: var(--green);
+  --btn-edge: var(--green-dark);
+  --btn-text: #053221;
+}
+
+.btn--ghost {
+  --btn-bg: rgba(255, 255, 255, 0.1);
+  --btn-edge: rgba(0, 0, 0, 0.35);
+  --btn-text: #fff;
+  --press-depth: 4px;
+}

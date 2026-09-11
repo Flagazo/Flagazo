@@ -1,0 +1,102 @@
+.option-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.option-group__label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.option-group__hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.option-group__options {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(var(--sunken-rgb), 0.45);
+  border: 1px solid var(--surface-border);
+}
+
+.option {
+  display: grid;
+  place-items: center;
+  padding: 9px 6px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease, transform 120ms var(--ease-pop);
+}
+
+.option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.option--selected {
+  background: var(--yellow);
+  color: var(--text-on-warm);
+  box-shadow: 0 3px 0 var(--yellow-dark);
+  transform: translateY(-1px);
+}
+
+.option--selected:hover {
+  background: var(--yellow);
+  color: var(--text-on-warm);
+}
+
+/* Solo el host edita: el resto ve la configuración sin poder tocarla. */
+.option-group--readonly .option {
+  cursor: default;
+}
+
+.option-group--readonly .option:hover {
+  background: transparent;
+  color: var(--text-soft);
+}
+
+.option-group--readonly .option--selected,
+.option-group--readonly .option--selected:hover {
+  background: rgba(255, 201, 60, 0.22);
+  color: var(--yellow);
+  box-shadow: none;
+  transform: none;
+}
+
+.option:has(:focus-visible) {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* Opción que existe pero no entra en el tope con la configuración actual. */
+.option--blocked {
+  opacity: 0.32;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.option--blocked:hover {
+  background: transparent;
+  color: var(--text-soft);
+}

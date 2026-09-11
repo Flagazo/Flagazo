@@ -1,0 +1,85 @@
+.flag-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /*
+   * El centro se despeja para que el contenido se lea, y el degradado es
+   * simétrico y centrado: antes estaba corrido hacia arriba y las banderas
+   * quedaban amontonadas abajo.
+   */
+  mask-image: radial-gradient(ellipse 62% 55% at 50% 50%, transparent 15%, #000 80%);
+  -webkit-mask-image: radial-gradient(ellipse 62% 55% at 50% 50%, transparent 15%, #000 80%);
+}
+
+/* Se pasa de los bordes para que al rotar no queden esquinas vacías. */
+.flag-bg__tilt {
+  position: absolute;
+  inset: -45% -45%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(18px, 3vw, 34px);
+  transform: rotate(-12deg);
+}
+
+.flag-bg__row {
+  display: flex;
+  gap: clamp(18px, 3vw, 34px);
+  width: max-content;
+  animation: flag-row-scroll 90s linear infinite;
+}
+
+.flag-bg__row--reverse {
+  animation-direction: reverse;
+  animation-duration: 110s;
+}
+
+/*
+ * Manda la altura y el ancho sale de la proporción real de cada bandera.
+ *
+ * Antes todas se forzaban a 4:3 con `object-fit: cover`, que recorta para
+ * llenar: a Suiza le cortaba arriba y abajo, a Nepal la destrozaba y a Qatar le
+ * sacaba los extremos. El fondo terminaba siendo la misma figura repetida 72
+ * veces. Con la proporción real, las anchas y las cuadradas se alternan solas y
+ * la franja deja de parecer un empapelado.
+ */
+.flag-bg__flag {
+  height: var(--flag-height);
+  width: auto;
+  border-radius: 8px;
+  opacity: var(--flag-opacity);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/*
+ * Cada fila un poco distinta, para que se lea como capas y no como una pared.
+ * Las de los extremos son las que más se ven —el centro lo despeja la máscara—,
+ * así que son las más grandes y nítidas; las del medio quedan atrás.
+ */
+.flag-bg__row {
+  --flag-height: clamp(52px, 6.6vw, 88px);
+  --flag-opacity: 0.19;
+}
+
+.flag-bg__row:nth-child(3),
+.flag-bg__row:nth-child(4) {
+  --flag-height: clamp(42px, 5.2vw, 68px);
+  --flag-opacity: 0.13;
+}
+
+.flag-bg__row:nth-child(2),
+.flag-bg__row:nth-child(5) {
+  --flag-height: clamp(47px, 5.9vw, 78px);
+  --flag-opacity: 0.16;
+}
+
+@keyframes flag-row-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

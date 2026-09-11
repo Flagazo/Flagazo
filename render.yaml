@@ -1,0 +1,46 @@
+# Configuración de despliegue para Render (https://render.com).
+#
+# Con este archivo en el repo, Render ofrece crear el servicio ya configurado
+# ("Blueprint") en vez de pedir que se completen los campos a mano. Si se
+# despliega en otra plataforma, este archivo se ignora solo.
+#
+# Flagazo es un solo proceso Node en un solo puerto: el mismo servidor sirve el
+# cliente compilado, las banderas y el WebSocket. No hay base de datos.
+
+services:
+  - type: web
+    name: flagazo
+    runtime: node
+    plan: free
+    # Ohio es la región de Render con menos latencia desde Sudamérica.
+    region: ohio
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      # El link de donaciones. `sync: false` significa que el valor NO vive en
+      # el repo: Render lo pide al crear el servicio y lo guarda de su lado.
+      #
+      # Tiene que estar cargado ANTES del primer build. Vite lo mete dentro del
+      # archivo compilado, así que agregarlo después no alcanza: hay que volver
+      # a desplegar para que entre. Sin esta variable el botón no se dibuja.
+      - key: VITE_DONATE_URL
+        sync: false
+
+      # Publicidad. Vacías hasta tener una cuenta aprobada; sin la primera, no
+      # se carga ningún script de terceros y los espacios no se dibujan.
+      - key: VITE_ADS_CLIENT
+        sync: false
+      - key: VITE_ADS_SLOT_LOBBY
+        sync: false
+      - key: VITE_ADS_SLOT_RESULTS
+        sync: false
+
+# Sin autoescalado a propósito: las partidas viven en memoria del proceso. Con
+# dos instancias, dos jugadores pueden caer en procesos distintos y no verse.
+# Para escalar haría falta mover el estado a Redis.
