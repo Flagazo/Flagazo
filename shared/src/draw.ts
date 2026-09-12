@@ -28,9 +28,26 @@ export const DRAW_GRACE_MS = 1_500;
  * después los puntajes y el ganador. Los tiempos internos los usa el cliente.
  */
 export const DRAW_REVEAL_MS = 11_000;
+
+/**
+ * Cuánto dura la revelación según cuántos jugadores hay.
+ *
+ * Once segundos alcanzan para mirar ocho dibujos; con treinta no da ni para
+ * encontrar el tuyo. Desde el noveno jugador se suma un poco por cada uno, con
+ * un tope para que la partida no se arrastre.
+ */
+export function drawRevealMs(players: number): number {
+  return Math.min(DRAW_REVEAL_MS + Math.max(0, players - 8) * 450, 22_000);
+}
+
 export const DRAW_REVEAL_TIMING = {
-  /** Cada dibujo aparece un poco después del anterior. */
+  /**
+   * Cada dibujo aparece un poco después del anterior, pero la cascada entera
+   * nunca pasa de `drawingStaggerTotalMs`: con 30 jugadores, a 140 ms cada uno,
+   * los últimos aparecían después de la bandera real.
+   */
   drawingStaggerMs: 140,
+  drawingStaggerTotalMs: 1_600,
   /** Cuándo se destapa la bandera real. */
   flagAtMs: 2_000,
   /** Cuándo aparecen los puntajes. */

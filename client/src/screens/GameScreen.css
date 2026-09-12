@@ -489,11 +489,18 @@
   color: var(--text-muted);
 }
 
+/*
+ * Con altura máxima y scroll propio. Con salas de hasta 30 jugadores, una tabla
+ * sin tope medía más que la pantalla y hacía scrollear la página entera.
+ */
 .standings__list {
   display: grid;
   gap: 4px;
+  max-height: calc(100dvh - 200px);
   margin: 0;
   padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
 }
 
@@ -624,10 +631,15 @@
     order: -1;
   }
 
+  /*
+   * Arriba de la bandera, tres filas como mucho: con 30 jugadores la tabla entera
+   * empujaba la bandera 600 px hacia abajo. El resto se ve scrolleando la tabla.
+   */
   .standings__list {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     grid-auto-flow: row;
     display: grid;
+    max-height: 128px;
   }
 }
 

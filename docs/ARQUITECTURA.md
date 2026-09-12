@@ -91,7 +91,7 @@ flagazo/
 - **Servidor → cliente:**
   - `room:state` → snapshot completo y público de la party (jugadores, host, settings, fase)
     **y de la partida en curso** (`game`: fase, instantes, bandera, marcador, revelación).
-    Snapshots completos en vez de diffs: con ≤12 jugadores pesan poco y una reconexión se
+    Snapshots completos en vez de diffs: con ≤30 jugadores pesan poco y una reconexión se
     resincroniza sola.
   - `room:left` → te fuiste, te expulsaron o se cerró la party.
 

@@ -65,7 +65,7 @@ export interface PublicPlayer {
 
 /**
  * Snapshot completo y público de una party.
- * Se manda entero (no diffs): con ≤12 jugadores pesa poco y una reconexión
+ * Se manda entero (no diffs): con ≤30 jugadores pesa poco y una reconexión
  * se resincroniza sola sin lógica de merge.
  */
 export interface RoomState {

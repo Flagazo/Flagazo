@@ -88,12 +88,37 @@
 
 /* ── Lista de jugadores ──────────────────────────────── */
 
+/*
+ * Varias columnas en vez de una: con salas de 30, la lista en una sola columna
+ * medía 1.260 px y el anfitrión tenía que scrollear un montón para llegar a
+ * Empezar. Con pocos jugadores se ve igual que antes, porque las filas se estiran.
+ */
 .player-list {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* En un celular entran dos por fila, más apretadas. */
+@media (max-width: 560px) {
+  .player-list {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 6px;
+  }
+
+  .player-list .player-row {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .player-list .player-row__avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
 }
 
 .player-row {

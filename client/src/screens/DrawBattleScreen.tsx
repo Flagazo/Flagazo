@@ -479,7 +479,15 @@ function RevealStage({ game }: { game: DrawSnapshot }) {
           <EntryCard
             key={entry.playerId}
             entry={entry}
-            index={index}
+            // Con muchos jugadores la cascada se aprieta: tiene que terminar antes
+            // de que aparezca la bandera real.
+            delayMs={
+              index *
+              Math.min(
+                DRAW_REVEAL_TIMING.drawingStaggerMs,
+                DRAW_REVEAL_TIMING.drawingStaggerTotalMs / reveal.entries.length,
+              )
+            }
             nickname={nameOf.get(entry.playerId) ?? '?'}
             isMe={entry.playerId === myId}
             showScore={stage.scores}
@@ -499,14 +507,14 @@ function RevealStage({ game }: { game: DrawSnapshot }) {
 
 function EntryCard({
   entry,
-  index,
+  delayMs,
   nickname,
   isMe,
   showScore,
   showWinner,
 }: {
   entry: DrawEntry;
-  index: number;
+  delayMs: number;
   nickname: string;
   isMe: boolean;
   showScore: boolean;
@@ -523,7 +531,7 @@ function EntryCard({
       ]
         .filter(Boolean)
         .join(' ')}
-      style={{ animationDelay: `${index * DRAW_REVEAL_TIMING.drawingStaggerMs}ms` }}
+      style={{ animationDelay: `${Math.round(delayMs)}ms` }}
     >
       <div className="draw-card__frame">
         {entry.drawing ? (

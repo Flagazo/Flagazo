@@ -2,8 +2,8 @@ import {
   COUNTDOWN_MS,
   DRAW_FLAG_PREVIEW_MS,
   DRAW_GRACE_MS,
-  DRAW_REVEAL_MS,
   DRAW_SCORING,
+  drawRevealMs,
   decodeDrawing,
   encodeDrawing,
 } from '@flagazo/shared';
@@ -46,6 +46,14 @@ interface DrawPlayerState {
 
 export type SubmitError = 'NOT_DRAWING' | 'STALE_ROUND' | 'NOT_PLAYING' | 'ALREADY_FINISHED' | 'INVALID_DRAWING';
 
+interface Scored {
+  player: DrawPlayerState;
+  score: number;
+  breakdown: DrawEntry['breakdown'];
+  /** El entero que ven los jugadores, que es por lo que se ordena. */
+  shown: number;
+}
+
 /**
  * Motor de Draw Battle. Dueño de la máquina de estados y de sus timers:
  *
@@ -72,6 +80,9 @@ export class DrawBattleGame implements Game {
   /** Token de la bandera visible en el modo "solo la bandera". null cuando se tapa. */
   private flagToken: string | null = null;
   private reveal: DrawRoundReveal | null = null;
+  /** La ronda ya no acepta dibujos: se están puntuando. */
+  private scoring = false;
+  private disposed = false;
 
   constructor(
     readonly settings: GameSettings,
@@ -136,6 +147,7 @@ export class DrawBattleGame implements Game {
     if (!flag) return this.finish();
 
     this.reveal = null;
+    this.scoring = false;
     for (const player of this.players.values()) {
       player.drawing = null;
       player.locked = false;
@@ -177,23 +189,57 @@ export class DrawBattleGame implements Game {
     this.enter('judging', DRAW_GRACE_MS, () => this.judge());
   }
 
-  /** Pinta y compara todos los dibujos, reparte los puntos y arma la revelación. */
+  /**
+   * Cierra la ronda y puntúa todos los dibujos.
+   *
+   * De a uno por vuelta del bucle de eventos, no todos seguidos. Un dibujo tarda
+   * unos 9 ms; treinta seguidos son ~280 ms en una compu normal y bastante más en
+   * el servidor gratuito, y durante ese rato el proceso no atiende a nadie: las
+   * otras salas se congelan y, en Flag Guess, una respuesta que llega en ese
+   * lapso se mide como más lenta y da menos puntos. Así, entre dibujo y dibujo
+   * pasa todo lo demás.
+   */
   private judge() {
+    if (this.scoring) return;
+    this.scoring = true;
     this.clearTimer();
     this.hideFlag();
     const flag = this.flags[this.roundIndex];
     if (!flag) return this.finish();
 
+    // Si se cerró antes del margen (terminaron todos), igual se muestra "comparando".
+    if (this.phase !== 'judging') {
+      this.phase = 'judging';
+      this.startsAt = Date.now();
+      this.endsAt = this.startsAt;
+      this.hooks.onChange();
+    }
+
     const reference = getReference(flag.id);
     const started = Date.now();
+    const pending = [...this.players.values()];
+    const scored: Scored[] = [];
+    const round = this.roundIndex;
 
-    const scored = [...this.players.values()].map((player) => {
+    const step = () => {
+      // La partida se cerró, o ya es otra ronda: este juicio quedó huérfano.
+      if (this.disposed || this.roundIndex !== round) return;
+      const player = pending.shift();
+      if (!player) return this.publishRound(flag, scored, started);
       const result =
         player.drawing && reference
           ? scoreDrawing(player.drawing, reference)
           : { score: 0, breakdown: { colors: 0, layout: 0, shape: 0, elements: 0 } };
-      return { player, ...result, shown: Math.round(result.score) };
-    });
+      scored.push({ player, ...result, shown: Math.round(result.score) });
+      setImmediate(step);
+    };
+    setImmediate(step);
+  }
+
+  /** Con todos los dibujos puntuados: puestos, puntos y revelación. */
+  private publishRound(flag: Country, allScored: Scored[], started: number) {
+    // Quien se fue de la sala mientras se puntuaba no entra en la revelación.
+    const scored = allScored.filter((item) => this.players.has(item.player.playerId));
 
     /*
      * Desempate: primero el puntaje que se ve (el entero: 87,4 y 86,6 se ven como
@@ -246,7 +292,8 @@ export class DrawBattleGame implements Game {
     // Los dibujos de la ronda ya están en la revelación: no se guardan en otro lado.
     for (const player of this.players.values()) player.drawing = null;
 
-    this.enter('reveal', DRAW_REVEAL_MS, () => this.afterReveal());
+    // Con más jugadores hay más dibujos para mirar: la revelación dura más.
+    this.enter('reveal', drawRevealMs(entries.length), () => this.afterReveal());
   }
 
   private afterReveal() {
@@ -276,7 +323,7 @@ export class DrawBattleGame implements Game {
    * todos los conectados, la ronda se corta.
    */
   submitDrawing(playerId: string, round: unknown, raw: unknown, final: unknown): SubmitError | null {
-    if (this.phase !== 'drawing' && this.phase !== 'judging') return 'NOT_DRAWING';
+    if ((this.phase !== 'drawing' && this.phase !== 'judging') || this.scoring) return 'NOT_DRAWING';
     if (round !== this.roundIndex + 1) return 'STALE_ROUND';
 
     const player = this.players.get(playerId);
@@ -311,13 +358,13 @@ export class DrawBattleGame implements Game {
     if (!player || player.connected === connected) return;
     player.connected = connected;
     // Si el único que faltaba se fue, no se lo espera: su borrador cuenta igual.
-    if ((this.phase === 'drawing' || this.phase === 'judging') && this.everyoneLocked()) this.judge();
+    if ((this.phase === 'drawing' || this.phase === 'judging') && !this.scoring && this.everyoneLocked()) this.judge();
     else this.hooks.onChange();
   }
 
   removePlayer(playerId: string) {
     if (!this.players.delete(playerId)) return;
-    if ((this.phase === 'drawing' || this.phase === 'judging') && this.everyoneLocked()) this.judge();
+    if ((this.phase === 'drawing' || this.phase === 'judging') && !this.scoring && this.everyoneLocked()) this.judge();
   }
 
   rename(playerId: string, nickname: string) {
@@ -373,6 +420,7 @@ export class DrawBattleGame implements Game {
   }
 
   dispose() {
+    this.disposed = true;
     this.clearTimer();
     this.hideFlag();
   }

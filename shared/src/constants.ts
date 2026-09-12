@@ -22,7 +22,15 @@ export const NICKNAME_MAX_LENGTH = 16;
 export const PARTY_CODE_LENGTH = 5;
 /** Sin 0/O, 1/I/L para que el código sea fácil de dictar y copiar. */
 export const PARTY_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-export const MAX_PLAYERS_PER_PARTY = 12;
+/**
+ * Cupo por sala. Era 12 y pasó a 30.
+ *
+ * El número no es gratis: con más jugadores la revelación de Draw Battle dura
+ * más (`drawRevealMs`), el servidor puntúa los dibujos de a uno para no trabarse
+ * y la tabla de posiciones tiene altura máxima en pantallas angostas. Si se sube
+ * de nuevo, esos son los lugares que hay que volver a mirar.
+ */
+export const MAX_PLAYERS_PER_PARTY = 30;
 /**
  * Privada por defecto: publicar la party es un acto deliberado del host, no algo
  * que le pase por no haber mirado una casilla.

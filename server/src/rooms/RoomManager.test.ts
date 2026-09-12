@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { COUNTDOWN_MS, REVEAL_MS } from '@flagazo/shared';
+import { COUNTDOWN_MS, MAX_PLAYERS_PER_PARTY, REVEAL_MS } from '@flagazo/shared';
 import type { LeaveReason } from '@flagazo/shared';
 import { RoomManager } from './RoomManager';
 import type { RoomTiming } from './RoomManager';
@@ -87,12 +87,19 @@ describe('crear y unirse', () => {
     expect(rooms.join(code, player('otro', 'Juana')).ok).toBe(true);
   });
 
-  it('rechaza a partir del jugador 13', () => {
+  it('rechaza al que llega con la sala llena', () => {
     const code = createParty('p0');
-    for (let i = 1; i < 12; i++) expect(rooms.join(code, player(`p${i}`)).ok).toBe(true);
+    for (let i = 1; i < MAX_PLAYERS_PER_PARTY; i++) {
+      expect(rooms.join(code, player(`p${i}`)).ok).toBe(true);
+    }
 
-    expect(rooms.getRoom(code)!.players.size).toBe(12);
-    expect(rooms.join(code, player('p12'))).toEqual({ ok: false, error: 'FULL' });
+    expect(rooms.getRoom(code)!.players.size).toBe(MAX_PLAYERS_PER_PARTY);
+    expect(rooms.join(code, player('uno-mas'))).toEqual({ ok: false, error: 'FULL' });
+  });
+
+  it('entran 30 jugadores', () => {
+    // El cupo subió de 12 a 30: que nadie lo baje sin darse cuenta.
+    expect(MAX_PLAYERS_PER_PARTY).toBe(30);
   });
 });
 
@@ -335,7 +342,7 @@ describe('parties públicas', () => {
 
     const listed = rooms.listPublic();
     expect(listed).toHaveLength(1);
-    expect(listed[0]).toMatchObject({ hostNickname: 'Ana', players: 1, maxPlayers: 12 });
+    expect(listed[0]).toMatchObject({ hostNickname: 'Ana', players: 1, maxPlayers: MAX_PLAYERS_PER_PARTY });
   });
 
   it('el host la publica y la despublica en cualquier momento', () => {
@@ -385,7 +392,7 @@ describe('parties públicas', () => {
   it('una party llena no se ofrece', () => {
     const code = createParty('ana');
     rooms.setVisibility('ana', 'public');
-    for (let i = 1; i < 12; i++) rooms.join(code, player(`p${i}`, `P${i}`));
+    for (let i = 1; i < MAX_PLAYERS_PER_PARTY; i++) rooms.join(code, player(`p${i}`, `P${i}`));
 
     expect(rooms.getRoom(code)!.isFull()).toBe(true);
     expect(rooms.listPublic()).toEqual([]);

@@ -166,11 +166,13 @@ describe('referencias', () => {
     expect(missing).toEqual([]);
   });
 
-  it('puntuar es rápido: una ronda de 12 jugadores no traba el servidor', () => {
+  it('puntuar un dibujo es rápido', () => {
     const sample = verticalTricolor('blue', 'white', 'red', { spacing: 30, wobble: 10 });
+    score('FR', sample);
     const started = performance.now();
-    for (let i = 0; i < 12; i++) score('FR', sample);
-    // Con margen para máquinas lentas: en una normal son ~120 ms.
-    expect(performance.now() - started).toBeLessThan(2_000);
+    for (let i = 0; i < 30; i++) score('FR', sample);
+    // 30 dibujos, una sala llena. En una compu normal son ~280 ms; el margen es para
+    // máquinas lentas. El motor igual los puntúa de a uno para no trabar el servidor.
+    expect(performance.now() - started).toBeLessThan(3_000);
   });
 });

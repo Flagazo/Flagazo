@@ -38,11 +38,27 @@ function build(countryIds = ['JP', 'FR'], settings: Partial<GameSettings> = {}, 
 
 const snap = (): DrawSnapshot => game.toSnapshot();
 const toDrawing = () => vi.advanceTimersByTime(COUNTDOWN_MS);
+/**
+ * Deja correr el juicio: se puntúa de a un dibujo por vuelta del bucle de eventos.
+ *
+ * Con los timers falsos, cada eslabón de una cadena de `setImmediate` necesita que
+ * el reloj avance: avanzar 0 ms corre solo el primero, y un avance grande de una
+ * vez tampoco la termina. Medido: hace falta un avance de 1 ms por eslabón. Con 40
+ * alcanza para 30 jugadores (32 eslabones) y el reloj se mueve apenas 40 ms, que
+ * no toca ningún tiempo que estos tests comprueben.
+ */
+const settle = () => {
+  for (let i = 0; i < 40; i++) vi.advanceTimersByTime(1);
+};
 const submit = (player: string, encoded: string, final = true, round = snap().round) =>
   game.submitDrawing(player, round, encoded, final);
 
 beforeEach(() => {
-  vi.useFakeTimers();
+  // `setImmediate` se simula a propósito: el juicio puntúa de a un dibujo por
+  // vuelta con él, y Vitest no lo incluye entre los timers falsos por defecto.
+  vi.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'Date'],
+  });
 });
 
 afterEach(() => {
@@ -113,6 +129,9 @@ describe('ronda de dibujo', () => {
     toDrawing();
     submit('bea', JAPAN_ALL_RED);
     submit('ana', JAPAN);
+    // Primero se ve que se está comparando; los puntajes llegan después.
+    expect(snap().phase).toBe('judging');
+    settle();
 
     const reveal = snap();
     expect(reveal.phase).toBe('reveal');
@@ -141,6 +160,7 @@ describe('ronda de dibujo', () => {
     expect(submit('bea', JAPAN_ALL_RED)).toBeNull();
 
     vi.advanceTimersByTime(DRAW_GRACE_MS);
+    settle();
     const reveal = snap().reveal!;
     expect(reveal.entries.find((e) => e.playerId === 'bea')?.finishedMs).toBeNull();
     // ana nunca apretó TERMINAR: se la juzga con su último borrador.
@@ -151,6 +171,7 @@ describe('ronda de dibujo', () => {
     build();
     toDrawing();
     vi.advanceTimersByTime(DRAW_MS + DRAW_GRACE_MS);
+    settle();
     expect(snap().phase).toBe('reveal');
     expect(submit('ana', JAPAN, true, 1)).toBe('NOT_DRAWING');
   });
@@ -162,9 +183,56 @@ describe('ronda de dibujo', () => {
     submit('ana', JAPAN_ALL_RED);
 
     game.setConnected('bea', false);
+    settle();
     const reveal = snap().reveal!;
     expect(snap().phase).toBe('reveal');
     expect(reveal.winners).toEqual(['bea']);
+  });
+});
+
+describe('juicio sin trabar el servidor', () => {
+  it('no puntúa todo de un bloque: entre dibujo y dibujo pasa lo demás', () => {
+    build(['JP'], {}, ['ana', 'bea', 'caro']);
+    toDrawing();
+    for (const id of ['ana', 'bea', 'caro']) submit(id, JAPAN);
+    expect(snap().phase).toBe('judging');
+    // Una sola vuelta del bucle no alcanza para tres dibujos.
+    vi.advanceTimersToNextTimer();
+    expect(snap().phase).toBe('judging');
+    settle();
+    expect(snap().phase).toBe('reveal');
+  });
+
+  it('mientras se puntúa no entra ningún dibujo', () => {
+    build(['JP'], {}, ['ana', 'bea']);
+    toDrawing();
+    submit('ana', JAPAN, false);
+    vi.advanceTimersByTime(DRAW_MS + DRAW_GRACE_MS);
+    expect(snap().phase).toBe('judging');
+    // bea llega tarde, con el juicio ya empezado.
+    expect(submit('bea', JAPAN, true, 1)).toBe('NOT_DRAWING');
+  });
+
+  it('cerrar la partida a mitad del juicio lo corta', () => {
+    build();
+    toDrawing();
+    submit('ana', JAPAN);
+    submit('bea', JAPAN);
+    game.dispose();
+    const before = changes;
+    settle();
+    expect(changes).toBe(before);
+  });
+
+  it('con muchos jugadores la revelación dura más', () => {
+    const players = Array.from({ length: 30 }, (_, i) => `p${i}`);
+    build(['JP'], {}, players);
+    toDrawing();
+    for (const id of players) submit(id, EMPTY);
+    settle();
+    const reveal = snap();
+    expect(reveal.phase).toBe('reveal');
+    expect(reveal.endsAt - reveal.startsAt).toBeGreaterThan(DRAW_REVEAL_MS);
   });
 });
 
@@ -176,6 +244,7 @@ describe('desempates', () => {
     submit('bea', JAPAN);
     vi.advanceTimersByTime(4_000);
     submit('ana', JAPAN);
+    settle();
 
     const [first, second] = snap().reveal!.entries;
     expect(first!.score).toBe(second!.score);
@@ -189,6 +258,7 @@ describe('desempates', () => {
     submit('ana', JAPAN, false);
     submit('bea', JAPAN, false);
     vi.advanceTimersByTime(DRAW_MS + DRAW_GRACE_MS);
+    settle();
 
     const reveal = snap().reveal!;
     expect(reveal.entries.map((e) => e.rank)).toEqual([1, 1]);
@@ -201,6 +271,7 @@ describe('desempates', () => {
     toDrawing();
     submit('ana', EMPTY);
     submit('bea', EMPTY);
+    settle();
 
     const reveal = snap().reveal!;
     expect(reveal.winners).toEqual([]);
@@ -215,6 +286,7 @@ describe('partida entera', () => {
     toDrawing();
     submit('ana', JAPAN);
     submit('bea', JAPAN_ALL_RED);
+    settle();
     vi.advanceTimersByTime(DRAW_REVEAL_MS);
 
     // Ronda nueva: los dibujos de la anterior ya no están en ningún lado.
@@ -223,6 +295,7 @@ describe('partida entera', () => {
     expect(snap().prompt?.name?.es).toBe(getCountry('FR')!.displayName.es);
     submit('ana', JAPAN);
     submit('bea', FRANCE);
+    settle();
     vi.advanceTimersByTime(DRAW_REVEAL_MS);
 
     const results = snap();

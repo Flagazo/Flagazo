@@ -263,7 +263,13 @@ armados a pinceladas —con temblor y huecos, como una persona— sobre banderas
 colores equivocados > garabato > vacío) y rangos con margen, no números exactos. Se
 comprobó que rompiendo a propósito el factor de conocimiento fallan 4 de esos tests.
 
-Puntuar un dibujo toma ~6 ms: una ronda de 12 jugadores, menos de 100 ms.
+Puntuar un dibujo toma ~9 ms. Una sala llena (30 jugadores) son ~280 ms en una compu
+normal y bastante más en el servidor gratuito, así que el motor **no los puntúa de un
+bloque**: hace uno por vuelta del bucle de eventos (`setImmediate`). Si los hiciera
+seguidos, el proceso quedaría sin atender a nadie ese rato: las otras salas se congelan
+y, en Flag Guess, una respuesta que llega en ese lapso se mediría como más lenta y daría
+menos puntos. Mientras se puntúa la ronda no acepta dibujos y los jugadores ven
+"Comparando los dibujos…".
 
 **No penalizar el estilo.** Todo el pipeline mide *qué color hay dónde*, nunca la
 calidad del trazo: bordes temblorosos (distribuciones y suavizado), relleno a
@@ -341,8 +347,10 @@ arruina una partida entre amigos.
   cambió; final al apretar TERMINAR o cuando se acaba el tiempo. Nada se transmite a
   los demás mientras se dibuja.
 - **Servidor → clientes**: los dibujos viajan en el snapshot **solo en la revelación**,
-  junto con puntajes y ranking. Con ≤12 jugadores y trazos simplificados son decenas
-  de KB, y la revelación genera uno o dos snapshots.
+  junto con puntajes y ranking. Con trazos simplificados un dibujo pesa entre 3 y 10 KB:
+  una sala llena de 30 son del orden de 100–300 KB por revelación. Es mucho más que el
+  resto de los snapshots, pero la revelación genera uno o dos, así que se aceptó. Si las
+  salas crecen más, este es el primer lugar donde conviene mandar los dibujos aparte.
 - **Almacenamiento**: en memoria de la partida y solo la ronda actual. Al pasar a la
   siguiente ronda se descartan. Nada va a disco.
 - El límite por mensaje de Socket.IO sube de 16 KB a 64 KB: sigue siendo una
