@@ -505,3 +505,37 @@ Dos espacios: el lobby y la pantalla final. Los dibuja `client/src/components/Ad
 
 > **Decisión.** Abre en una pestaña aparte (`target="_blank"` con
 > `rel="noopener noreferrer"`). Nadie quiere perder la sala en la que está por donar.
+
+
+---
+
+## 20. Dos juegos: Flag Guess y Draw Battle
+
+El diseño completo de Draw Battle —cómo se representa un dibujo, cómo se compara con
+la bandera y por qué— está en [`DRAW_BATTLE.md`](DRAW_BATTLE.md). Acá solo lo que
+cambió en la arquitectura general.
+
+> **Decisión.** Los 7 modos que ya existían (normal, pixelado, bomba…) resultaron ser
+> *variantes* del mismo juego: comparten fases, entrada y puntuación. Draw Battle no
+> entra en ese molde, así que va **un nivel arriba**: `GameSettings.kind` elige el juego
+> y `mode` sigue siendo la variante de Flag Guess. Renombrar `mode` a "variante" en
+> todo el código no cambiaba ningún comportamiento, así que se dejó.
+
+> **Decisión.** `RoomManager` habla con una interfaz `Game`
+> (`server/src/game/Game.ts`): arrancar, conexiones, bajas, renombres, snapshot y
+> `dispose`. La sala, el host, las gracias de desconexión y la revancha funcionan igual
+> para los dos juegos sin saber cuál es. Lo propio de cada uno (`answer`,
+> `submitDrawing`) se pide después de mirar `kind`; si no corresponde, `WRONG_GAME`.
+> Un tercer juego es un motor más y un caso en `createGame`.
+
+> **Decisión.** El snapshot es una unión discriminada:
+> `GameSnapshot = GuessSnapshot | DrawSnapshot`. El cliente elige la pantalla con
+> `kind`, y TypeScript no deja leer un campo de un juego en la pantalla del otro.
+
+> **Decisión.** La configuración es plana, con los campos de los dos juegos lado a lado
+> (`drawRounds`, `drawSeconds`, `drawPrompt` junto a `totalRounds`…). Cambiar de juego y
+> volver no pierde lo elegido, y un cambio parcial sigue siendo un objeto con las claves
+> que cambian. Por eso `isValidSettings` valida los campos de los dos juegos siempre.
+
+> **Nota.** El límite por mensaje de Socket.IO pasó de 16 KB a 64 KB. Sigue siendo una
+> protección contra abusos; el dibujo más grande que permiten los topes ronda los 48 KB.

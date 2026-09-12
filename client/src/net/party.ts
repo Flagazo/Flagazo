@@ -99,6 +99,14 @@ export function rematch(): Promise<ActionResult> {
   return run(() => withTimeout().emitWithAck('game:rematch', {}));
 }
 
+/**
+ * Manda el dibujo de la ronda, ya codificado como trazos.
+ * `final` es TERMINAR; si no, es un borrador por si se corta la conexión.
+ */
+export function submitDrawing(round: number, drawing: string, final: boolean): Promise<ActionResult> {
+  return run(() => withTimeout().emitWithAck('draw:submit', { round, drawing, final }));
+}
+
 export type AnswerResult =
   | { ok: true; feedback: AnswerFeedback }
   | { ok: false; error: string };

@@ -1,0 +1,418 @@
+/*
+ * Draw Battle usa la misma base que el juego de adivinar (encabezado, tabla,
+ * cuenta regresiva, barra de tiempo, ranking) y le suma su acento: el violeta.
+ * Tiene que sentirse otro modo del mismo juego, no otra aplicación.
+ */
+
+.draw-screen {
+  max-width: 1120px;
+}
+
+.draw-badge {
+  background: rgba(183, 140, 255, 0.18);
+  color: var(--violet);
+  cursor: default;
+}
+
+.draw-countdown__number {
+  color: var(--violet);
+  text-shadow: 0 8px 0 #6d45b8;
+}
+
+/* ── Layout ──────────────────────────────────────────── */
+
+/*
+ * Dos columnas y no tres como en adivinar: acá la estrella es el lienzo, y la
+ * columna fantasma que centra la bandera le robaba 260 px de ancho para dibujar.
+ */
+.draw-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.draw-body--with-board {
+  grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.draw-main {
+  width: 100%;
+}
+
+.draw-standings .standings__row {
+  grid-template-columns: 16px 26px minmax(0, 1fr) auto 22px;
+}
+
+.draw-standings__status {
+  font-size: 0.8rem;
+  color: var(--green);
+}
+
+@media (max-width: 1000px) {
+  .draw-body--with-board {
+    grid-template-columns: 1fr;
+  }
+
+  .draw-standings {
+    position: static;
+    order: -1;
+  }
+
+  .draw-standings .standings__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  /*
+   * Mientras se dibuja, en pantallas angostas la tabla se va: empujaba el lienzo
+   * hacia abajo, y quién terminó ya se lee debajo del botón.
+   */
+  .draw-body--drawing .draw-standings {
+    display: none;
+  }
+}
+
+/* Mientras se dibuja, que arrastrar hacia abajo no recargue la página. */
+body.is-drawing {
+  overscroll-behavior: none;
+}
+
+/* ── Consigna ────────────────────────────────────────── */
+
+/*
+ * El ancho también depende del alto de la pantalla.
+ *
+ * Todo lo que no es lienzo (barra superior, consigna, tiempo, herramientas,
+ * botón) ocupa unos 500 px de alto, medido. Si el lienzo creciera solo con el
+ * ancho, en una notebook la
+ * paleta quedaba debajo del borde y había que scrollear para cambiar de color en
+ * medio de la ronda. Así el lienzo se achica lo justo para que entre todo junto.
+ * En un celular no hace efecto: ahí manda el ancho.
+ */
+.draw-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: min(860px, max(340px, calc((100dvh - 500px) * 1.5)));
+  margin-inline: auto;
+}
+
+.draw-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  animation: pop-in 360ms var(--ease-pop) both;
+}
+
+.draw-prompt__label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.draw-prompt__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 6vw, 3rem);
+  line-height: 1.05;
+  color: var(--violet);
+  text-transform: uppercase;
+  text-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.draw-prompt__flag {
+  max-width: min(100%, 320px);
+  max-height: 180px;
+  margin-top: 6px;
+  border-radius: 8px;
+  box-shadow: 0 10px 26px var(--surface-shadow);
+  user-select: none;
+}
+
+.draw-timer {
+  width: min(100%, 560px);
+}
+
+/* ── Lienzo ──────────────────────────────────────────── */
+
+.draw-stage__canvas {
+  position: relative;
+  width: 100%;
+}
+
+.draw-stage__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(var(--sunken-rgb), 0.55);
+  backdrop-filter: blur(1.5px);
+  text-align: center;
+  animation: pop-in 240ms var(--ease-pop) both;
+}
+
+.draw-stage__time-up {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 8vw, 3.4rem);
+  color: var(--yellow);
+  text-shadow: 0 6px 0 var(--yellow-dark);
+}
+
+.draw-stage__judging {
+  margin: 0;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.draw-stage__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.draw-stage__count {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+/* ── Revelación ──────────────────────────────────────── */
+
+.draw-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.draw-reveal__name {
+  text-transform: uppercase;
+}
+
+/*
+ * Los dibujos uno al lado del otro también en un celular: con 150 px de mínimo
+ * entran dos por fila en una pantalla de 375. Con tarjetas más anchas quedaba
+ * una por fila, y con seis jugadores había que scrollear para compararlos.
+ */
+.draw-reveal__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+@media (min-width: 700px) {
+  .draw-reveal__grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+  }
+}
+
+.draw-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 12px 26px var(--surface-shadow);
+}
+
+/* Los dibujos aparecen de a uno, en cascada. */
+.draw-card--entry {
+  animation: draw-card-in 420ms var(--ease-pop) both;
+}
+
+@keyframes draw-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+}
+
+.draw-card--me {
+  border-color: rgba(183, 140, 255, 0.7);
+}
+
+.draw-card--winner {
+  border-color: var(--yellow);
+  box-shadow:
+    0 0 0 3px var(--yellow),
+    0 16px 36px rgba(255, 201, 60, 0.25);
+  animation: draw-winner 520ms var(--ease-pop) both;
+}
+
+@keyframes draw-winner {
+  40% {
+    transform: scale(1.05);
+  }
+}
+
+.draw-card__frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #fff;
+}
+
+.draw-card__frame--flag {
+  background: rgba(var(--sunken-rgb), 0.6);
+}
+
+.draw-card__frame img {
+  max-width: 100%;
+  max-height: 100%;
+  animation: pop-in 420ms var(--ease-pop) both;
+}
+
+.draw-card__mystery {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--text-muted);
+}
+
+.draw-card__empty {
+  font-weight: 800;
+  color: #8a93a3;
+}
+
+.draw-card__trophy {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 1.6rem;
+  animation: pop-in 420ms var(--ease-pop) both;
+}
+
+.draw-card--flag {
+  border-color: rgba(46, 229, 157, 0.5);
+}
+
+.draw-card__caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.draw-card__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draw-card__score {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-muted);
+}
+
+.draw-card__score small {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.draw-card__score--shown {
+  color: var(--yellow);
+  animation: pop-in 420ms var(--ease-pop) both;
+}
+
+.draw-card--winner .draw-card__score--shown {
+  color: var(--yellow);
+}
+
+/* Desglose del puntaje propio: cuatro barritas, sin números que abrumen. */
+.draw-breakdown {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.draw-breakdown__item {
+  display: grid;
+  grid-template-columns: minmax(58px, 76px) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.draw-breakdown dt {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.draw-breakdown dd {
+  height: 6px;
+  margin: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(var(--sunken-rgb), 0.7);
+}
+
+.draw-breakdown__bar {
+  display: block;
+  height: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--violet), var(--cyan));
+  transition: transform 700ms var(--ease-out);
+}
+
+.draw-reveal__lead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  text-align: center;
+  opacity: 0;
+}
+
+.draw-reveal__lead--shown {
+  opacity: 1;
+  animation: pop-in 420ms var(--ease-pop) both;
+}
+
+.draw-reveal__tie {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+/* ── Resultados ──────────────────────────────────────── */
+
+.draw-results__best {
+  margin: 0;
+}

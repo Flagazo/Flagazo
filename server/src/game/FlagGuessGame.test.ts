@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { COUNTDOWN_MS, REVEAL_MS, ROUND_SUMMARY_MS } from '@flagazo/shared';
-import type { GameSettings, GameSnapshot } from '@flagazo/shared';
+import { COUNTDOWN_MS, DEFAULT_GAME_SETTINGS, REVEAL_MS, ROUND_SUMMARY_MS } from '@flagazo/shared';
+import type { GameSettings, GuessSnapshot } from '@flagazo/shared';
 import { COUNTRIES, getCountry, poolFor } from '../data/countries';
-import { GameEngine, pickFlags } from './GameEngine';
+import { FlagGuessGame, pickFlags } from './FlagGuessGame';
 import { resolveFlagToken } from './flagTokens';
 
 const SETTINGS: GameSettings = {
+  ...DEFAULT_GAME_SETTINGS,
   mode: 'normal',
   difficulty: 'all',
   totalRounds: 2,
@@ -17,12 +18,12 @@ const FLAG_MS = SETTINGS.secondsPerFlag * 1000;
 const roster = (...ids: string[]) =>
   ids.map((id) => ({ id, nickname: id.toUpperCase(), connected: true }));
 
-let engine: GameEngine;
-let snapshots: GameSnapshot[];
+let engine: FlagGuessGame;
+let snapshots: GuessSnapshot[];
 
 function build(settings: GameSettings = SETTINGS, players = roster('ana', 'bea')) {
   snapshots = [];
-  engine = new GameEngine(settings, players, {
+  engine = new FlagGuessGame(settings, players, {
     onChange: () => snapshots.push(engine.toSnapshot()),
   });
   return engine;
@@ -32,7 +33,7 @@ function build(settings: GameSettings = SETTINGS, players = roster('ana', 'bea')
 function buildWith(countryIds: string[], settings: GameSettings = SETTINGS) {
   snapshots = [];
   const flags = countryIds.map((id) => getCountry(id)!);
-  engine = new GameEngine(
+  engine = new FlagGuessGame(
     settings,
     roster('ana', 'bea'),
     { onChange: () => snapshots.push(engine.toSnapshot()) },

@@ -64,8 +64,14 @@ export function createGameServer() {
 
   const httpServer = createServer(app);
   const io: GameServer = new Server(httpServer, {
-    // Límite de tamaño por mensaje: ningún evento legítimo del juego se acerca a esto.
-    maxHttpBufferSize: 16_000,
+    /*
+     * Límite de tamaño por mensaje, contra abusos.
+     *
+     * Era 16 KB hasta Draw Battle. Un dibujo son trazos, no una imagen, y con los
+     * topes de `DRAW_LIMITS` el más grande posible ronda los 48 KB: 64 KB le da
+     * lugar sin dejar de cortar a quien intente mandar megabytes.
+     */
+    maxHttpBufferSize: 64_000,
   });
 
   const sessions = new SessionStore(config.sessionTtlMs);

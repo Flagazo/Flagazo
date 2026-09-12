@@ -10,23 +10,48 @@ export type RoomPhase = 'lobby' | 'playing' | 'results';
  * Si la party aparece en la lista pública o solo se entra con el código.
  *
  * No está en `GameSettings` a propósito: no cambia en nada cómo se juega, y el
- * GameEngine no tiene por qué enterarse de si la sala está listada.
+ * motor de la partida no tiene por qué enterarse de si la sala está listada.
  */
 export type PartyVisibility = 'public' | 'private';
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'all';
 
-/** Configuración de la partida. Solo el host la edita; el servidor la hace cumplir. */
+/**
+ * Qué juego se juega. Es la decisión de más arriba: cada uno tiene su motor, sus
+ * fases y su pantalla. Las variantes de adivinar (`mode`) viven adentro de 'guess'.
+ */
+export type GameKind = 'guess' | 'draw';
+
+/** En Draw Battle, qué se muestra para pedir la bandera. */
+export type DrawPrompt = 'name' | 'flag';
+
+/**
+ * Configuración de la partida. Solo el host la edita; el servidor la hace cumplir.
+ *
+ * Es plana a propósito, con los campos de cada juego lado a lado: cambiar de
+ * juego y volver no pierde lo que ya se había elegido, y un cambio parcial sigue
+ * siendo un objeto con las claves que cambian. La dificultad es compartida.
+ */
 export interface GameSettings {
-/** Cómo se juega: normal o alguno de los modos con vuelta de rosca. */
-  mode: GameModeId;
+  kind: GameKind;
   difficulty: Difficulty;
+
+  // ── Flag Guess ──
+  /** Cómo se juega: normal o alguna de las variantes con vuelta de rosca. */
+  mode: GameModeId;
   /** Cantidad de rondas de la partida. */
   totalRounds: number;
   /** Banderas seguidas dentro de cada ronda (después va un resumen con ranking). */
   flagsPerRound: number;
   /** Segundos para responder cada bandera. */
   secondsPerFlag: number;
+
+  // ── Draw Battle ──
+  /** Rondas: en cada una se dibuja una bandera. */
+  drawRounds: number;
+  /** Segundos para dibujar. */
+  drawSeconds: number;
+  drawPrompt: DrawPrompt;
 }
 
 /** Lo que todos los jugadores pueden ver de otro jugador. Nunca incluye el token. */
@@ -72,11 +97,14 @@ export interface PublicParty {
   hostNickname: string;
   players: number;
   maxPlayers: number;
+  kind: GameKind;
   mode: GameModeId;
   difficulty: Difficulty;
   totalRounds: number;
   flagsPerRound: number;
   secondsPerFlag: number;
+  drawRounds: number;
+  drawSeconds: number;
   /** Hace cuánto se creó, en ms. El cliente lo muestra como "hace 2 min". */
   ageMs: number;
 }
@@ -183,12 +211,17 @@ export interface GamePlayer {
 }
 
 /**
- * Estado completo de la partida en curso.
+ * Estado completo de la partida en curso, del juego que sea.
  *
  * Va dentro de `RoomState`, así una reconexión se resincroniza con el mismo
  * mecanismo que todo lo demás y no hace falta reconstruir nada en el cliente.
+ * `kind` dice cuál de los dos es y con eso el cliente elige la pantalla.
  */
-export interface GameSnapshot {
+export type GameSnapshot = GuessSnapshot | DrawSnapshot;
+
+/** Partida de Flag Guess en curso. */
+export interface GuessSnapshot {
+  kind: 'guess';
   phase: GamePhase;
   /** Instantes absolutos del reloj del servidor; el cliente los traduce al suyo. */
   startsAt: number;
@@ -255,4 +288,105 @@ export interface FlagPresentation {
 export interface GameModeInfo {
   id: GameModeId;
   emoji: string;
+}
+
+// ── Draw Battle ─────────────────────────────────────────────
+
+/**
+ * Fases de una ronda de dibujo.
+ *
+ * `judging` es el margen corto después del tiempo en el que todavía se aceptan
+ * los dibujos que están viajando por la red.
+ */
+export type DrawPhase = 'countdown' | 'drawing' | 'judging' | 'reveal' | 'results';
+
+/** Cómo le fue a un jugador en la partida de dibujo. */
+export interface DrawPlayer {
+  playerId: string;
+  nickname: string;
+  connected: boolean;
+  /** Apretó TERMINAR en la ronda actual: su lienzo está bloqueado. */
+  finished: boolean;
+  /**
+   * El marcador que define la partida: la suma de los puntos por puesto
+   * (`DRAW_SCORING.placePoints`). Con `[1]`, que es hoy, es igual a rondas ganadas.
+   */
+  points: number;
+  /** Rondas en las que salió primero, empates incluidos. */
+  roundsWon: number;
+  /** Suma de los puntajes de todas las rondas jugadas. */
+  totalScore: number;
+  /** Rondas en las que se lo puntuó, para poder promediar. */
+  roundsPlayed: number;
+  bestScore: number;
+}
+
+/**
+ * De qué salió un puntaje. Cada señal va de 0 a 100.
+ * Existe para poder explicar el número, no para recalcularlo en el cliente.
+ */
+export interface DrawScoreBreakdown {
+  /** ¿Usó los colores de la bandera, en cantidad parecida? */
+  colors: number;
+  /** ¿Los puso en el lugar correcto? */
+  layout: number;
+  /** ¿Ocupó el lienzo como la bandera, sin importar el color? */
+  shape: number;
+  /** ¿Incluyó las piezas importantes? */
+  elements: number;
+}
+
+/** El dibujo de un jugador en una ronda ya juzgada. */
+export interface DrawEntry {
+  playerId: string;
+  /** El dibujo codificado, o null si dejó el lienzo vacío. */
+  drawing: string | null;
+  /** 0 a 100, entero. */
+  score: number;
+  breakdown: DrawScoreBreakdown;
+  /** Cuánto tardó en apretar TERMINAR. null si se le acabó el tiempo. */
+  finishedMs: number | null;
+  /** Puesto desde 1. Los empatados comparten el número. */
+  rank: number;
+  /** Lo que sumó al marcador en esta ronda. */
+  points: number;
+}
+
+export interface DrawRoundReveal {
+  flag: FlagReveal;
+  /** Ordenadas por puesto. */
+  entries: DrawEntry[];
+  /** Quién se llevó la ronda. Vacío si nadie dibujó nada. */
+  winners: string[];
+}
+
+/** Qué se le muestra a todos para pedir la bandera. */
+export interface DrawPromptInfo {
+  mode: DrawPrompt;
+  /** En modo 'name'. */
+  name: LocalizedName | null;
+  /**
+   * En modo 'flag', mientras se deja ver: URL con token aleatorio, como en el
+   * juego de adivinar. Pasa a null cuando se tapa y el token deja de servir.
+   */
+  flagUrl: string | null;
+  /** En modo 'flag', cuántos ms se ve desde que empieza la ronda. */
+  previewMs: number;
+}
+
+/** Partida de Draw Battle en curso. */
+export interface DrawSnapshot {
+  kind: 'draw';
+  phase: DrawPhase;
+  /** Instantes absolutos del reloj del servidor. */
+  startsAt: number;
+  endsAt: number;
+  /** Ronda actual, desde 1. */
+  round: number;
+  totalRounds: number;
+  /** Desde que empieza a dibujarse hasta el final del margen. */
+  prompt: DrawPromptInfo | null;
+  /** Solo en 'reveal': los dibujos, los puntajes y la bandera real. */
+  reveal: DrawRoundReveal | null;
+  players: DrawPlayer[];
 }

@@ -411,8 +411,12 @@ describe('parties públicas', () => {
       'ageMs',
       'code',
       'difficulty',
+      // Qué juego es y cuánto dura: sin esto no se sabe si es de adivinar o de dibujar.
+      'drawRounds',
+      'drawSeconds',
       'flagsPerRound',
       'hostNickname',
+      'kind',
       'maxPlayers',
       'mode',
       'players',

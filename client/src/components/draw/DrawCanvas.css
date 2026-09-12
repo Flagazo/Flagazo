@@ -1,0 +1,41 @@
+/*
+ * El lienzo es la bandera: siempre 3:2 y blanco, como una hoja.
+ *
+ * `touch-action: none` es lo que impide que arrastrar el dedo haga scroll o zoom
+ * en vez de dibujar. El resto evita la lupa, el menú y la selección de texto que
+ * aparecen con un toque largo en los celulares.
+ */
+.draw-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow:
+    0 0 0 3px rgba(183, 140, 255, 0.55),
+    0 16px 36px var(--surface-shadow);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.draw-canvas--eraser {
+  cursor: cell;
+}
+
+/* En la galería de la revelación: se mira, no se toca. */
+.draw-canvas--view {
+  cursor: default;
+  box-shadow: 0 10px 24px var(--surface-shadow);
+}
+
+/* Bloqueado: se sigue viendo nítido (es su dibujo), pero no invita a tocarlo. */
+.draw-canvas--locked {
+  cursor: default;
+  box-shadow:
+    0 0 0 3px var(--surface-border),
+    0 16px 36px var(--surface-shadow);
+}

@@ -4,6 +4,7 @@
  */
 import type {
   Difficulty,
+  GameKind,
   GameModeId,
   GameModeInfo,
   GameSettings,
@@ -58,12 +59,25 @@ export const MAX_FLAGS_PER_ROUND = 100;
 export const MAX_FLAGS_PER_GAME = 100;
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
-  mode: 'normal',
+  kind: 'guess',
   difficulty: 'all',
+  mode: 'normal',
   totalRounds: 3,
   flagsPerRound: 10,
   secondsPerFlag: 15,
+  drawRounds: 10,
+  drawSeconds: 45,
+  drawPrompt: 'name',
 };
+
+/**
+ * Los juegos, en el orden en que se ofrecen. Como con los modos, el nombre y la
+ * descripción son texto traducible y viven en el diccionario del cliente.
+ */
+export const GAME_KINDS: readonly { id: GameKind; emoji: string }[] = [
+  { id: 'guess', emoji: '🎯' },
+  { id: 'draw', emoji: '🎨' },
+];
 
 // ── Red ─────────────────────────────────────────────────────
 /** Cada cuánto el cliente mide ping y desfase de reloj con el servidor. */

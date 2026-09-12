@@ -93,6 +93,7 @@ export const en = {
     slots: (players: number, max: number) => `${players}/${max} players`,
     setup: (rounds: number, flags: number, seconds: number) =>
       `${rounds === 1 ? '1 round' : `${rounds} rounds`} · ${flags} flags · ${seconds}s each`,
+    drawSetup: (rounds: number, seconds: number) => `${rounds} flags to draw · ${seconds}s each`,
     justCreated: 'just now',
     minutesAgo: (minutes: number) => `${minutes} min ago`,
     join: 'Join',
@@ -115,7 +116,26 @@ export const en = {
 
     settings: 'Settings',
     hostDecides: 'The host decides',
-    mode: 'Mode',
+    game: 'Game mode',
+    /*
+     * Las variantes de Flag Guess antes se llamaban "Mode". Con dos juegos,
+     * "Mode" y "Game mode" en la misma pantalla eran dos cosas con el mismo nombre.
+     */
+    mode: 'Twist',
+    drawRounds: 'Rounds',
+    drawRoundsHint: 'one flag each',
+    drawSeconds: 'Time to draw',
+    drawPrompt: 'What you get',
+    drawPrompts: {
+      name: 'Country name',
+      flag: (seconds: number) => `The flag, ${seconds}s`,
+    },
+    drawPromptHints: {
+      name: 'You read the name and draw the flag from memory.',
+      flag: (seconds: number) =>
+        `The flag shows for ${seconds} seconds and hides. Then, from memory.`,
+    },
+    drawSummary: (rounds: number, minutes: number) => `${rounds} flags to draw · ~${minutes} min`,
     difficulty: 'Difficulty',
     difficulties: {
       easy: 'Easy',
@@ -143,6 +163,17 @@ export const en = {
     publicBadge: '🌐 Public',
     privateHint: 'Only people with the code get in.',
     publicHint: 'Listed for anyone to find while you are in the lobby.',
+  },
+
+  kinds: {
+    guess: {
+      name: 'Flag Guess',
+      description: 'A flag shows up and everyone races to name it.',
+    },
+    draw: {
+      name: 'Draw Battle',
+      description: 'Everyone gets the same country and draws its flag from memory. Best drawing wins.',
+    },
   },
 
   modes: {
@@ -276,6 +307,88 @@ export const en = {
     },
   },
 
+  draw: {
+    roundOf: (round: number, total: number) => `Round ${round}/${total}`,
+    drawTheFlagOf: 'Draw the flag of',
+    memorize: 'Memorize it!',
+    fromMemory: 'Now, from memory ✍️',
+    canvas: 'Drawing canvas',
+    finish: 'Finish',
+    finished: 'Done ✓',
+    finishedCount: (done: number, total: number) => `${done} of ${total} finished`,
+    timeUp: "⏰ Time's up!",
+    judging: 'Comparing the drawings…',
+    joinedLate: 'You joined mid-game: you draw in the next one 👀',
+    limitReached: 'The drawing is full. Undo something to keep going.',
+
+    tools: {
+      label: 'Drawing tools',
+      brush: 'Brush',
+      eraser: 'Eraser',
+      undo: 'Undo',
+      redo: 'Redo',
+      clear: 'Clear everything',
+      size: 'Brush size',
+      sizes: { thin: 'Thin', medium: 'Medium', thick: 'Thick' },
+      colors: 'Colors',
+      custom: 'Pick any color',
+    },
+    colors: {
+      red: 'Red',
+      maroon: 'Maroon',
+      orange: 'Orange',
+      yellow: 'Yellow',
+      green: 'Green',
+      darkGreen: 'Dark green',
+      lightBlue: 'Light blue',
+      blue: 'Blue',
+      navy: 'Navy',
+      purple: 'Purple',
+      pink: 'Pink',
+      brown: 'Brown',
+      white: 'White',
+      gray: 'Gray',
+      black: 'Black',
+    },
+
+    realFlag: 'The real flag',
+    emptyDrawing: 'Did not draw',
+    finishedIn: (seconds: string) => `done in ${seconds}`,
+    roundWinner: (names: string, many: boolean) => `🏆 ${names} ${many ? 'take' : 'takes'} the round`,
+    noRoundWinner: 'Nobody drew anything: no winner this round',
+    tieByTime: 'Same score: whoever finished first takes it',
+    nextFlag: 'Next flag in a few seconds…',
+    breakdown: {
+      colors: 'Colors',
+      layout: 'Placement',
+      shape: 'Shape',
+      elements: 'Elements',
+    },
+
+    standings: 'Draw Battle',
+    pointsColumn: 'Pts',
+    pointsTitle: 'Points on the scoreboard',
+    averageColumn: 'Avg',
+    averageTitle: 'Average drawing score',
+    bestDrawing: (nickname: string, score: number) => `Best drawing: ${nickname} with ${score}/100`,
+    winner: (nickname: string) => `${nickname} wins Draw Battle!`,
+    tie: (names: string) => `Tie: ${names}`,
+    noWinner: 'Nobody won a round',
+    winnerRule: 'The best drawing of each round takes 1 point. Most points wins.',
+
+    scoring: {
+      title: 'How drawings are scored',
+      intro: 'The server compares every drawing with the real flag, the same way for everyone.',
+      colors: 'Colors: did you use the flag’s colors, in similar amounts?',
+      layout: 'Placement: are they in the right place?',
+      shape: 'Shape: does the drawing fill the canvas like the flag does?',
+      elements:
+        'Elements: did you include what makes the flag that flag (the disc, the leaf, the cross)? Forgetting it costs a lot.',
+      style: 'Shaky lines, scribbled fill and skipped tiny details barely cost anything.',
+      ties: 'Same score: whoever pressed Finish first takes the round.',
+    },
+  },
+
   toasts: {
     joined: (nickname: string) => `${nickname} joined 👋`,
     left: (nickname: string) => `${nickname} left`,
@@ -313,6 +426,11 @@ export const en = {
     ALREADY_ANSWERED: 'You already answered this flag.',
     NOT_ENOUGH_FLAGS: 'There are not enough flags for that setup.',
     GAME_NOT_FINISHED: 'The game is not over yet.',
+    WRONG_GAME: 'That belongs to a different game mode.',
+    NOT_DRAWING: 'Time is up for this drawing.',
+    ALREADY_FINISHED: 'You already finished this drawing.',
+    STALE_ROUND: 'That drawing was for a round that is over.',
+    INVALID_DRAWING: 'The drawing could not be sent. Try again.',
 
     BAD_REQUEST: 'Invalid request.',
     NO_NICKNAME: 'Pick a nickname first.',

@@ -6,7 +6,7 @@ import type { Country, FlagPresentation, GameModeId } from '@flagazo/shared';
  * El motor **no conoce ningún modo concreto**: le pregunta al modo qué banderas
  * jugar, cómo mostrarlas, cuánto dura cada una y si hay castigo extra. Agregar
  * "Supervivencia" o "Equipos" es sumar un archivo acá y listarlo en el registro,
- * sin tocar `GameEngine`.
+ * sin tocar `FlagGuessGame`.
  *
  * A diferencia del boceto de la arquitectura, los ganchos **devuelven valores**
  * en vez de mutar un contexto: el motor sigue siendo el único dueño del estado,

@@ -134,6 +134,22 @@ export function registerPartyHandlers(
   );
 
   socket.on(
+    'draw:submit',
+    safeHandler<{ round?: unknown; drawing?: unknown; final?: unknown }, PartyAck<null>>(
+      'draw:submit',
+      (payload, ack) => {
+        // Solo la forma del payload: el contenido del dibujo lo valida el motor,
+        // con el mismo decodificador que usa el cliente para armarlo.
+        if (typeof payload.round !== 'number' || typeof payload.drawing !== 'string') {
+          return ack({ ok: false, error: 'BAD_REQUEST' });
+        }
+        ack(rooms.submitDrawing(session.playerId, payload));
+      },
+      (error) => ({ ok: false, error }),
+    ),
+  );
+
+  socket.on(
     'game:rematch',
     safeHandler<Record<string, never>, PartyAck<null>>(
       'game:rematch',

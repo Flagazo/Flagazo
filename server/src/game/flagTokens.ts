@@ -25,6 +25,16 @@ export function resolveFlagToken(token: string): string | undefined {
   return tokens.get(token)?.countryId;
 }
 
+/**
+ * Invalida un token antes de que venza.
+ *
+ * En Draw Battle con "solo la bandera", la imagen se deja ver unos segundos y se
+ * tapa: si el token siguiera sirviendo, bastaría con volver a abrir la URL.
+ */
+export function revokeFlagToken(token: string) {
+  tokens.delete(token);
+}
+
 /** Borra los tokens vencidos. Devuelve cuántos sacó. */
 export function sweepFlagTokens(now = Date.now()): number {
   let removed = 0;

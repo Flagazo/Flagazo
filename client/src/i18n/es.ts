@@ -91,6 +91,7 @@ export const es: Dictionary = {
     slots: (players, max) => `${players}/${max} jugadores`,
     setup: (rounds, flags, seconds) =>
       `${rounds === 1 ? '1 ronda' : `${rounds} rondas`} · ${flags} banderas · ${seconds}s cada una`,
+    drawSetup: (rounds, seconds) => `${rounds} banderas para dibujar · ${seconds}s cada una`,
     justCreated: 'recién',
     minutesAgo: (minutes) => `hace ${minutes} min`,
     join: 'Entrar',
@@ -113,7 +114,21 @@ export const es: Dictionary = {
 
     settings: 'Configuración',
     hostDecides: 'Decide el anfitrión',
-    mode: 'Modo',
+    game: 'Modo de juego',
+    mode: 'Variante',
+    drawRounds: 'Rondas',
+    drawRoundsHint: 'una bandera cada una',
+    drawSeconds: 'Tiempo para dibujar',
+    drawPrompt: 'Qué te toca',
+    drawPrompts: {
+      name: 'Nombre del país',
+      flag: (seconds) => `La bandera, ${seconds}s`,
+    },
+    drawPromptHints: {
+      name: 'Lees el nombre y dibujas la bandera de memoria.',
+      flag: (seconds) => `La bandera se ve ${seconds} segundos y se tapa. Después, de memoria.`,
+    },
+    drawSummary: (rounds, minutes) => `${rounds} banderas para dibujar · ~${minutes} min`,
     difficulty: 'Dificultad',
     difficulties: {
       easy: 'Fácil',
@@ -141,6 +156,18 @@ export const es: Dictionary = {
     publicBadge: '🌐 Pública',
     privateHint: 'Solo entra quien tenga el código.',
     publicHint: 'Listada para que cualquiera la encuentre mientras estén en el lobby.',
+  },
+
+  kinds: {
+    guess: {
+      name: 'Flag Guess',
+      description: 'Aparece una bandera y todos compiten por nombrarla primero.',
+    },
+    draw: {
+      name: 'Draw Battle',
+      description:
+        'A todos les toca el mismo país y dibujan su bandera de memoria. Gana el mejor dibujo.',
+    },
   },
 
   modes: {
@@ -262,6 +289,88 @@ export const es: Dictionary = {
     },
   },
 
+  draw: {
+    roundOf: (round, total) => `Ronda ${round}/${total}`,
+    drawTheFlagOf: 'Dibuja la bandera de',
+    memorize: '¡Memorízala!',
+    fromMemory: 'Ahora, de memoria ✍️',
+    canvas: 'Lienzo de dibujo',
+    finish: 'Terminar',
+    finished: 'Listo ✓',
+    finishedCount: (done, total) => `${done} de ${total} terminaron`,
+    timeUp: '⏰ ¡Tiempo!',
+    judging: 'Comparando los dibujos…',
+    joinedLate: 'Entraste con la partida empezada: dibujas en la próxima 👀',
+    limitReached: 'El dibujo está lleno. Deshaz algo para seguir.',
+
+    tools: {
+      label: 'Herramientas de dibujo',
+      brush: 'Pincel',
+      eraser: 'Borrador',
+      undo: 'Deshacer',
+      redo: 'Rehacer',
+      clear: 'Borrar todo',
+      size: 'Grosor del pincel',
+      sizes: { thin: 'Fino', medium: 'Medio', thick: 'Grueso' },
+      colors: 'Colores',
+      custom: 'Elegir cualquier color',
+    },
+    colors: {
+      red: 'Rojo',
+      maroon: 'Granate',
+      orange: 'Naranja',
+      yellow: 'Amarillo',
+      green: 'Verde',
+      darkGreen: 'Verde oscuro',
+      lightBlue: 'Celeste',
+      blue: 'Azul',
+      navy: 'Azul marino',
+      purple: 'Violeta',
+      pink: 'Rosa',
+      brown: 'Marrón',
+      white: 'Blanco',
+      gray: 'Gris',
+      black: 'Negro',
+    },
+
+    realFlag: 'La bandera real',
+    emptyDrawing: 'No dibujó',
+    finishedIn: (seconds) => `terminó en ${seconds}`,
+    roundWinner: (names, many) => `🏆 ${names} ${many ? 'se llevan' : 'se lleva'} la ronda`,
+    noRoundWinner: 'Nadie dibujó nada: esta ronda no tiene ganador',
+    tieByTime: 'Mismo puntaje: se la lleva quien terminó primero',
+    nextFlag: 'Siguiente bandera en unos segundos…',
+    breakdown: {
+      colors: 'Colores',
+      layout: 'Ubicación',
+      shape: 'Forma',
+      elements: 'Elementos',
+    },
+
+    standings: 'Draw Battle',
+    pointsColumn: 'Pts',
+    pointsTitle: 'Puntos en el marcador',
+    averageColumn: 'Prom',
+    averageTitle: 'Puntaje promedio de sus dibujos',
+    bestDrawing: (nickname, score) => `Mejor dibujo: ${nickname} con ${score}/100`,
+    winner: (nickname) => `¡${nickname} gana Draw Battle!`,
+    tie: (names) => `Empate: ${names}`,
+    noWinner: 'Nadie ganó ninguna ronda',
+    winnerRule: 'El mejor dibujo de cada ronda se lleva 1 punto. Gana quien sume más.',
+
+    scoring: {
+      title: 'Cómo se puntúan los dibujos',
+      intro: 'El servidor compara cada dibujo con la bandera real, igual para todos.',
+      colors: 'Colores: ¿usaste los de la bandera, en cantidad parecida?',
+      layout: 'Ubicación: ¿están en el lugar correcto?',
+      shape: 'Forma: ¿el dibujo ocupa el lienzo como la bandera?',
+      elements:
+        'Elementos: ¿incluiste lo que la hace esa bandera (el disco, la hoja, la cruz)? Olvidarlo cuesta mucho.',
+      style: 'Las líneas temblorosas, rellenar a garabatos y saltear detalles diminutos casi no cuestan.',
+      ties: 'Con el mismo puntaje, se lleva la ronda quien apretó Terminar primero.',
+    },
+  },
+
   toasts: {
     joined: (nickname) => `${nickname} se unió 👋`,
     left: (nickname) => `${nickname} se fue`,
@@ -299,6 +408,11 @@ export const es: Dictionary = {
     ALREADY_ANSWERED: 'Ya respondiste esta bandera.',
     NOT_ENOUGH_FLAGS: 'No hay banderas suficientes para esa configuración.',
     GAME_NOT_FINISHED: 'La partida todavía no terminó.',
+    WRONG_GAME: 'Eso es de otro modo de juego.',
+    NOT_DRAWING: 'Se terminó el tiempo de este dibujo.',
+    ALREADY_FINISHED: 'Ya terminaste este dibujo.',
+    STALE_ROUND: 'Ese dibujo era de una ronda que ya terminó.',
+    INVALID_DRAWING: 'No se pudo mandar el dibujo. Vuelve a intentarlo.',
 
     BAD_REQUEST: 'Pedido inválido.',
     NO_NICKNAME: 'Primero elige un nickname.',

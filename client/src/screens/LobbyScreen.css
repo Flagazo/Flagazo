@@ -496,3 +496,110 @@
     font-size: 1.45rem;
   }
 }
+
+/* ── Modo de juego ──────────────────────────────────────── */
+
+/*
+ * El juego es la primera decisión y la más grande: dos tarjetas anchas con su
+ * explicación a la vista, no casillas con un emoji. Cada una lleva el color de
+ * su pantalla: amarillo para adivinar, violeta para dibujar.
+ */
+.kind-picker {
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.kind-picker__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kind-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-width: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+  background: rgba(var(--sunken-rgb), 0.4);
+  cursor: pointer;
+  transition: background 130ms ease, border-color 130ms ease, transform 130ms var(--ease-pop);
+}
+
+.kind-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.kind-option__emoji {
+  flex: none;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.kind-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kind-option__name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.kind-option__description {
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+
+.kind-option--guess.kind-option--selected {
+  background: rgba(255, 201, 60, 0.16);
+  border-color: var(--yellow);
+}
+
+.kind-option--guess.kind-option--selected .kind-option__name {
+  color: var(--yellow);
+}
+
+.kind-option--draw.kind-option--selected {
+  background: rgba(183, 140, 255, 0.18);
+  border-color: var(--violet);
+}
+
+.kind-option--draw.kind-option--selected .kind-option__name {
+  color: var(--violet);
+}
+
+.kind-option:has(:disabled) {
+  cursor: default;
+}
+
+.kind-option:has(:disabled):hover {
+  transform: none;
+}
+
+.kind-option:has(:focus-visible) {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .kind-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .kind-option__emoji {
+    font-size: 1.6rem;
+  }
+}

@@ -1,0 +1,117 @@
+.draw-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* ── Colores ─────────────────────────────────────────── */
+
+/*
+ * Una grilla que se reparte el ancho en vez de filas que se cortan donde caen:
+ * en un celular quedan dos filas parejas de 8, en una compu una sola de 16.
+ * En la compu las casillas pueden ser más angostas porque se apuntan con mouse,
+ * y así la paleta no se parte en dos filas y no empuja el botón fuera de la vista.
+ */
+.draw-toolbar__colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(34px, 1fr));
+  gap: 6px;
+}
+
+@media (min-width: 700px) {
+  .draw-toolbar__colors {
+    grid-template-columns: repeat(auto-fit, minmax(28px, 1fr));
+    gap: 5px;
+  }
+}
+
+.draw-swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  /* 40 px de alto: un blanco cómodo para un dedo sin ocupar media pantalla. */
+  height: 40px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 120ms var(--ease-pop), border-color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.draw-swatch:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.draw-swatch--selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px var(--violet);
+  transform: translateY(-2px);
+}
+
+.draw-swatch:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.draw-swatch--custom {
+  background:
+    conic-gradient(from 0deg, #ff4f8b, #ffc93c, #2ee59d, #35d6ff, #b78cff, #ff4f8b);
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Herramientas ────────────────────────────────────── */
+
+.draw-toolbar__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.draw-toolbar__group {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(var(--sunken-rgb), 0.55);
+  border: 1px solid var(--surface-border);
+}
+
+.draw-tool {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 1.25rem;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.draw-tool:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.draw-tool--active {
+  background: rgba(183, 140, 255, 0.28);
+  box-shadow: inset 0 0 0 2px var(--violet);
+}
+
+.draw-tool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.draw-size__dot {
+  display: block;
+  border-radius: 50%;
+  background: currentColor;
+}

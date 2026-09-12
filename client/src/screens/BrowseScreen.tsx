@@ -108,6 +108,7 @@ function PartyRow({
   onJoin: () => void;
 }) {
   const t = useT();
+  const drawing = party.kind === 'draw';
   const mode = GAME_MODES.find((info) => info.id === party.mode);
   const minutes = Math.floor(party.ageMs / 60_000);
   const almostFull = party.players >= party.maxPlayers - 2;
@@ -115,15 +116,19 @@ function PartyRow({
   return (
     <li className="card browse-row">
       <span className="browse-row__mode" aria-hidden="true">
-        {mode?.emoji ?? '🏳️'}
+        {drawing ? '🎨' : (mode?.emoji ?? '🏳️')}
       </span>
 
       <div className="browse-row__info">
         <p className="browse-row__host">{t.browse.hostedBy(party.hostNickname)}</p>
         <p className="browse-row__setup">
-          {mode && <span className="browse-row__tag">{t.modes[mode.id].name}</span>}
+          {/* Qué juego es va primero: una sala de dibujo y una de adivinar no se parecen en nada. */}
+          <span className="browse-row__tag">{t.kinds[party.kind].name}</span>
+          {!drawing && mode && <span className="browse-row__tag">{t.modes[mode.id].name}</span>}
           <span className="browse-row__tag">{t.lobby.difficulties[party.difficulty]}</span>
-          {t.browse.setup(party.totalRounds, party.flagsPerRound, party.secondsPerFlag)}
+          {drawing
+            ? t.browse.drawSetup(party.drawRounds, party.drawSeconds)
+            : t.browse.setup(party.totalRounds, party.flagsPerRound, party.secondsPerFlag)}
         </p>
       </div>
 

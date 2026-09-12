@@ -21,9 +21,11 @@
     "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
     "build:countries": "tsx scripts/build-countries.ts",
     "build:flags": "tsx scripts/build-flags.ts",
+    "build:flag-refs": "tsx scripts/build-flag-references.ts",
     "audit:flags": "node scripts/audit-flag-ratios.mjs"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "concurrently": "^10.0.5",
     "i18n-iso-countries": "^7.14.0",
     "typescript": "^7.0.2",

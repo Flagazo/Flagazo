@@ -3,13 +3,18 @@
  *
  * Verifica el contrato tal como lo vive el cliente — arrancar, responder,
  * revelar y jugar la revancha — sin depender de la lógica interna del motor
- * (eso lo cubre GameEngine.test.ts).
+ * (eso lo cubre FlagGuessGame.test.ts).
  */
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { io as connect } from 'socket.io-client';
 import type { Socket } from 'socket.io-client';
-import type { ClientToServerEvents, RoomState, ServerToClientEvents } from '@flagazo/shared';
+import type {
+  ClientToServerEvents,
+  GuessSnapshot,
+  RoomState,
+  ServerToClientEvents,
+} from '@flagazo/shared';
 import { createGameServer } from '../app';
 import { resolveFlagToken } from '../game/flagTokens';
 import { getCountry } from '../data/countries';
@@ -65,6 +70,9 @@ function waitForRoom(
 
 const inPhase = (phase: string) => (room: RoomState) => room.game?.phase === phase;
 
+/** Este archivo prueba Flag Guess: la partida es siempre de adivinar. */
+const guess = (room: RoomState) => room.game as GuessSnapshot | null;
+
 /** Crea una party de un solo jugador con la configuración más corta posible. */
 async function soloParty(nickname: string, secondsPerFlag = 10) {
   const player = await newPlayer(nickname);
@@ -81,7 +89,7 @@ async function soloParty(nickname: string, secondsPerFlag = 10) {
 
 /** Qué país es la bandera activa, resolviendo el token igual que hace el servidor. */
 function countryOf(room: RoomState): string {
-  const token = room.game?.flagUrl?.split('/').pop() ?? '';
+  const token = guess(room)?.flagUrl?.split('/').pop() ?? '';
   const id = resolveFlagToken(token);
   if (!id) throw new Error(`El token "${token}" no resolvió a ningún país`);
   return id;
@@ -124,7 +132,7 @@ describe('partida por socket', () => {
     const room = await flagUp;
 
     // La URL de la bandera activa no dice qué país es.
-    expect(room.game?.flagUrl).toMatch(/^\/flag\/r\/[a-f0-9]{32}$/);
+    expect(guess(room)?.flagUrl).toMatch(/^\/flag\/r\/[a-f0-9]{32}$/);
     expect(room.game?.reveal).toBeNull();
 
     const country = getCountry(countryOf(room))!;
@@ -139,11 +147,11 @@ describe('partida por socket', () => {
     expect(answered).toEqual({ ok: true, data: { verdict: 'correct' } });
 
     const revealed = await revealing;
-    expect(revealed.game?.reveal?.countryId).toBe(country.id);
-    expect(revealed.game?.reveal?.flagUrl).toMatch(
+    expect(guess(revealed)?.reveal?.countryId).toBe(country.id);
+    expect(guess(revealed)?.reveal?.flagUrl).toMatch(
       new RegExp(`^/flags/${country.id.toLowerCase()}\\.svg\\?v=.`),
     );
-    expect(revealed.game?.outcomes[0]).toMatchObject({ correct: true });
+    expect(guess(revealed)?.outcomes[0]).toMatchObject({ correct: true });
 
     ana.socket.disconnect();
   });

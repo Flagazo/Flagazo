@@ -144,6 +144,19 @@ export interface ClientToServerEvents {
     payload: Record<string, never>,
     ack: Ack<Result<null, GameError | PartyError | CommonError>>,
   ) => void;
+
+  // ── Draw Battle ───────────────────────────────────────────
+  /**
+   * El dibujo de la ronda, como trazos codificados (ver `shared/src/drawing.ts`).
+   *
+   * `final: false` es un borrador: se guarda por si el jugador se desconecta, y
+   * puede seguir dibujando. `final: true` es TERMINAR: bloquea su lienzo.
+   * El cliente nunca manda puntajes: el servidor pinta los trazos y los compara.
+   */
+  'draw:submit': (
+    payload: { round: number; drawing: string; final: boolean },
+    ack: Ack<Result<null, GameError | PartyError | CommonError>>,
+  ) => void;
 }
 
 /** Errores propios de la partida. */
@@ -153,7 +166,17 @@ export type GameError =
   | 'NO_FLAG_ACTIVE'
   | 'ALREADY_ANSWERED'
   | 'NOT_ENOUGH_FLAGS'
-  | 'GAME_NOT_FINISHED';
+  | 'GAME_NOT_FINISHED'
+  /** La acción es de un juego distinto al que se está jugando. */
+  | 'WRONG_GAME'
+  /** No es momento de dibujar (o ya pasó el margen). */
+  | 'NOT_DRAWING'
+  /** Ya apretó TERMINAR: su dibujo no cambia más. */
+  | 'ALREADY_FINISHED'
+  /** El dibujo es de otra ronda: llegó tarde. */
+  | 'STALE_ROUND'
+  /** El dibujo no pasó la validación. */
+  | 'INVALID_DRAWING';
 
 /**
  * Respuesta privada a quien contestó. Los demás solo se enteran de que

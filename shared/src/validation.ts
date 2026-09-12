@@ -11,8 +11,17 @@ import {
   SECONDS_PER_FLAG_OPTIONS,
   SESSION_TOKEN_LENGTH,
   TOTAL_ROUNDS_OPTIONS,
+  GAME_KINDS,
 } from './constants';
-import type { Difficulty, GameModeId, GameSettings, PartyVisibility } from './types';
+import { DRAW_PROMPT_OPTIONS, DRAW_ROUNDS_OPTIONS, DRAW_SECONDS_OPTIONS } from './draw';
+import type {
+  Difficulty,
+  DrawPrompt,
+  GameKind,
+  GameModeId,
+  GameSettings,
+  PartyVisibility,
+} from './types';
 
 export type NicknameError =
   | 'EMPTY'
@@ -113,6 +122,16 @@ export function parseSettingsPatch(raw: unknown): Partial<GameSettings> | null {
     if (!GAME_MODES.some((mode) => mode.id === value)) return null;
     patch.mode = value;
   }
+  if (input.kind !== undefined) {
+    const value = input.kind as GameKind;
+    if (!GAME_KINDS.some((kind) => kind.id === value)) return null;
+    patch.kind = value;
+  }
+  if (input.drawPrompt !== undefined) {
+    const value = input.drawPrompt as DrawPrompt;
+    if (!DRAW_PROMPT_OPTIONS.includes(value)) return null;
+    patch.drawPrompt = value;
+  }
   // Este no viene de una lista: el host lo escribe, así que se valida como rango.
   if (input.flagsPerRound !== undefined) {
     const value = Number(input.flagsPerRound);
@@ -122,6 +141,8 @@ export function parseSettingsPatch(raw: unknown): Partial<GameSettings> | null {
   for (const [key, options] of [
     ['totalRounds', TOTAL_ROUNDS_OPTIONS],
     ['secondsPerFlag', SECONDS_PER_FLAG_OPTIONS],
+    ['drawRounds', DRAW_ROUNDS_OPTIONS],
+    ['drawSeconds', DRAW_SECONDS_OPTIONS],
   ] as const) {
     if (input[key] === undefined) continue;
     const value = Number(input[key]);
@@ -169,8 +190,18 @@ export function fitsInGame(totalRounds: number, flagsPerRound: number): boolean 
   return totalRounds * flagsPerRound <= MAX_FLAGS_PER_GAME;
 }
 
-/** El tope de banderas por partida limita qué combinaciones de settings son válidas. */
+/**
+ * Si la configuración completa es jugable.
+ *
+ * Se validan los campos de los dos juegos siempre, no solo los del elegido: los
+ * dos conviven en la misma configuración y cambiar de juego no puede destapar
+ * valores que nunca se revisaron.
+ */
 export function isValidSettings(settings: GameSettings): boolean {
+  if (!GAME_KINDS.some((kind) => kind.id === settings.kind)) return false;
   if (!isValidFlagsPerRound(settings.flagsPerRound)) return false;
+  if (!DRAW_ROUNDS_OPTIONS.includes(settings.drawRounds)) return false;
+  if (!DRAW_SECONDS_OPTIONS.includes(settings.drawSeconds)) return false;
+  if (!DRAW_PROMPT_OPTIONS.includes(settings.drawPrompt)) return false;
   return fitsInGame(settings.totalRounds, settings.flagsPerRound);
 }

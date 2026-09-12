@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_GAME_SETTINGS,
   MAX_FLAGS_PER_ROUND,
   MIN_FLAGS_PER_ROUND,
   TOTAL_ROUNDS_OPTIONS,
@@ -96,6 +97,24 @@ describe('parseSettingsPatch', () => {
     expect(parseSettingsPatch({ flagsPerRound: Infinity })).toBeNull();
   });
 
+  it('acepta el juego y la configuración de Draw Battle', () => {
+    expect(parseSettingsPatch({ kind: 'draw' })).toEqual({ kind: 'draw' });
+    expect(parseSettingsPatch({ drawRounds: 15, drawSeconds: 90, drawPrompt: 'flag' })).toEqual({
+      drawRounds: 15,
+      drawSeconds: 90,
+      drawPrompt: 'flag',
+    });
+  });
+
+  it('rechaza valores de Draw Battle que no están en las opciones', () => {
+    expect(parseSettingsPatch({ kind: 'ajedrez' })).toBeNull();
+    expect(parseSettingsPatch({ drawRounds: 7 })).toBeNull();
+    expect(parseSettingsPatch({ drawSeconds: 1 })).toBeNull();
+    expect(parseSettingsPatch({ drawPrompt: 'emoji' })).toBeNull();
+    // Un campo malo arrastra a todo el cambio, aunque el resto sea válido.
+    expect(parseSettingsPatch({ kind: 'draw', drawSeconds: 5 })).toBeNull();
+  });
+
   it('ignora campos desconocidos y payloads sin nada útil', () => {
     expect(parseSettingsPatch({ hackeado: true })).toBeNull();
     expect(parseSettingsPatch({})).toBeNull();
@@ -114,11 +133,18 @@ describe('tope de banderas por partida', () => {
   });
 
   it('acepta combinaciones dentro del tope y rechaza las que se pasan', () => {
-    const base = { difficulty: 'all', secondsPerFlag: 15, mode: 'normal' } as const;
+    const base = DEFAULT_GAME_SETTINGS;
     expect(isValidSettings({ ...base, totalRounds: 5, flagsPerRound: 20 })).toBe(true);
     expect(isValidSettings({ ...base, totalRounds: 1, flagsPerRound: 100 })).toBe(true);
     expect(isValidSettings({ ...base, totalRounds: 5, flagsPerRound: 21 })).toBe(false);
     expect(isValidSettings({ ...base, totalRounds: 3, flagsPerRound: 50 })).toBe(false);
+  });
+
+  it('valida los campos de los dos juegos, sea cual sea el elegido', () => {
+    expect(isValidSettings({ ...DEFAULT_GAME_SETTINGS, kind: 'draw' })).toBe(true);
+    // Si no, cambiar de juego podría destapar un valor que nunca se revisó.
+    expect(isValidSettings({ ...DEFAULT_GAME_SETTINGS, kind: 'guess', drawSeconds: 3 })).toBe(false);
+    expect(isValidSettings({ ...DEFAULT_GAME_SETTINGS, kind: 'draw', flagsPerRound: 1 })).toBe(false);
   });
 
   it('fitsInGame responde por una combinación que todavía no es un settings', () => {
@@ -138,7 +164,7 @@ describe('tope de banderas por partida', () => {
    * un término y `fitsInGame` no (o al revés), acá se rompe.
    */
   it('fitsInGame y isValidSettings coinciden en todo el rango', () => {
-    const base = { difficulty: 'all', secondsPerFlag: 15, mode: 'normal' } as const;
+    const base = DEFAULT_GAME_SETTINGS;
     for (const totalRounds of TOTAL_ROUNDS_OPTIONS) {
       for (let flagsPerRound = MIN_FLAGS_PER_ROUND; flagsPerRound <= MAX_FLAGS_PER_ROUND; flagsPerRound++) {
         expect(fitsInGame(totalRounds, flagsPerRound)).toBe(

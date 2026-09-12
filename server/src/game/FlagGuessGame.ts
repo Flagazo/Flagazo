@@ -12,33 +12,22 @@ import type {
   FlagOutcome,
   GamePhase,
   GameSettings,
-  GameSnapshot,
+  GuessSnapshot,
   LocalizedName,
   PlayerStats,
   Country as PickedFlag,
 } from '@flagazo/shared';
 import { matchAnswer } from '../answers/matcher';
 import type { AnswerVerdict } from '../answers/matcher';
-import { getCountry, poolFor } from '../data/countries';
+import { poolFor } from '../data/countries';
 import { createLogger } from '../lib/log';
-import { config } from '../config';
+import { flagFileUrl } from './flagUrls';
 import { createFlagToken } from './flagTokens';
+import type { Game, GameHooks, RosterEntry } from './Game';
 import { getMode } from './modes';
 import type { GameMode } from './modes/types';
 
 const log = createLogger('game');
-
-/**
- * URL definitiva de una bandera, ya revelada.
- * El `?v=` cambia cuando se regeneran las banderas: sin él, quien tuviera las
- * anteriores en la caché del navegador seguiría viéndolas.
- */
-const flagFileUrl = (id: string) => `/flags/${id.toLowerCase()}.svg?v=${config.flagsVersion}`;
-
-/** Cómo se le avisa al mundo exterior que hay que reenviar el snapshot. */
-export interface GameHooks {
-  onChange(): void;
-}
 
 const emptyStats = (): PlayerStats => ({
   correct: 0,
@@ -107,7 +96,8 @@ export function pickFlags(pool: readonly Country[], howMany: number): Country[] 
  * Todo lo que decide (qué bandera toca, cuándo termina, quién acertó) pasa acá.
  * El cliente solo dibuja lo que dice el snapshot.
  */
-export class GameEngine {
+export class FlagGuessGame implements Game {
+  readonly kind = 'guess' as const;
   private readonly mode: GameMode;
   private readonly flags: PickedFlag[];
   private readonly players = new Map<string, GamePlayerState>();
@@ -123,7 +113,7 @@ export class GameEngine {
 
   constructor(
     readonly settings: GameSettings,
-    roster: readonly { id: string; nickname: string; connected: boolean }[],
+    roster: readonly RosterEntry[],
     private readonly hooks: GameHooks,
     /**
      * Banderas ya elegidas, en vez de sortearlas.
@@ -409,11 +399,12 @@ export class GameEngine {
 
   // ── Snapshot ──────────────────────────────────────────────
 
-  toSnapshot(): GameSnapshot {
+  toSnapshot(): GuessSnapshot {
     const flag = this.currentFlag;
     const revealing = this.phase === 'reveal';
 
     return {
+      kind: 'guess',
       phase: this.phase,
       startsAt: this.startsAt,
       endsAt: this.endsAt,

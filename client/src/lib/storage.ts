@@ -43,4 +43,28 @@ export const storage = {
   /** Idioma elegido. Devuelve el crudo: quién lo lee decide si es válido. */
   getLocale: () => read(() => localStorage, KEYS.locale),
   setLocale: (locale: string) => write(() => localStorage, KEYS.locale, locale),
+
+  /**
+   * El dibujo en curso de Draw Battle, por sala y ronda.
+   *
+   * En sessionStorage, como la sesión: sobrevive a un F5 en medio del dibujo y
+   * es de esta pestaña. Guardar uno nuevo borra los de rondas anteriores, que ya
+   * no sirven para nada.
+   */
+  getDraft: (code: string, round: number) => read(() => sessionStorage, draftKey(code, round)),
+  setDraft: (code: string, round: number, drawing: string) => {
+    const key = draftKey(code, round);
+    try {
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const other = sessionStorage.key(i);
+        if (other?.startsWith(DRAFT_PREFIX) && other !== key) sessionStorage.removeItem(other);
+      }
+    } catch {
+      // Sin almacenamiento: no se recupera el dibujo tras un F5, pero se juega igual.
+    }
+    write(() => sessionStorage, key, drawing);
+  },
 };
+
+const DRAFT_PREFIX = 'flagazo:draw:';
+const draftKey = (code: string, round: number) => `${DRAFT_PREFIX}${code}:${round}`;

@@ -23,9 +23,33 @@ export function useGameSounds(game: GameSnapshot | null) {
       return;
     }
 
+    const before = previous.current;
+
+    // Draw Battle tiene sus propias fases y no tiene rachas.
+    if (game.kind === 'draw') {
+      const roundKey = String(game.round);
+      if (game.phase !== before.phase || roundKey !== before.flagKey) {
+        switch (game.phase) {
+          case 'drawing':
+            sound.play('go');
+            break;
+          case 'reveal': {
+            // Suena distinto para quien se llevó la ronda.
+            const won = game.reveal?.winners.includes(myId ?? '') ?? false;
+            sound.play(won ? 'correct' : 'reveal');
+            break;
+          }
+          case 'results':
+            sound.play('gameEnd');
+            break;
+        }
+      }
+      previous.current = { phase: game.phase, flagKey: roundKey, seconds: before.seconds, streak: 0 };
+      return;
+    }
+
     const flagKey = `${game.round}-${game.flagInRound}`;
     const me = game.players.find((player) => player.playerId === myId);
-    const before = previous.current;
 
     if (game.phase !== before.phase || flagKey !== before.flagKey) {
       switch (game.phase) {

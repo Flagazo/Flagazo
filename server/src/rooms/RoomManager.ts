@@ -17,8 +17,8 @@ import type {
   PublicParty,
   Result,
 } from '@flagazo/shared';
-import { GameEngine } from '../game/GameEngine';
-import type { AnswerOutcome } from '../game/GameEngine';
+import type { AnswerOutcome } from '../game/FlagGuessGame';
+import { createGame } from '../game/Game';
 import { createLogger } from '../lib/log';
 import { Room } from './Room';
 import { generatePartyCode } from './codes';
@@ -235,7 +235,9 @@ export class RoomManager {
     }));
 
     room.phase = 'playing';
-    room.game = new GameEngine(room.settings, roster, {
+    // Qué motor juega lo decide `settings.kind`. De acá para abajo, la sala trata
+    // igual a cualquier juego.
+    room.game = createGame(room.settings, roster, {
       // Cada transición del motor reenvía el snapshot de la party entera.
       onChange: () => {
         if (room.game?.isFinished && room.phase !== 'results') {
@@ -259,6 +261,7 @@ export class RoomManager {
     const room = this.roomOf(playerId);
     if (!room) return { ok: false, error: 'NOT_IN_PARTY' };
     if (!room.game) return { ok: false, error: 'NOT_PLAYING' };
+    if (room.game.kind !== 'guess') return { ok: false, error: 'WRONG_GAME' };
     // Entró con la partida empezada: mira, pero juega recién la próxima.
     if (room.players.get(playerId)?.waiting) return { ok: false, error: 'NOT_PLAYING' };
 
@@ -266,6 +269,24 @@ export class RoomManager {
     if (outcome === 'NO_FLAG_ACTIVE') return { ok: false, error: 'NO_FLAG_ACTIVE' };
     if (outcome === 'ALREADY_ANSWERED') return { ok: false, error: 'ALREADY_ANSWERED' };
     return { ok: true, data: outcome };
+  }
+
+  /**
+   * El dibujo de un jugador en Draw Battle. La validación del contenido la hace el
+   * motor, con el mismo decodificador que usa el cliente para armarlo.
+   */
+  submitDrawing(
+    playerId: string,
+    payload: { round?: unknown; drawing?: unknown; final?: unknown },
+  ): Result<null, PartyError | GameError> {
+    const room = this.roomOf(playerId);
+    if (!room) return { ok: false, error: 'NOT_IN_PARTY' };
+    if (!room.game) return { ok: false, error: 'NOT_PLAYING' };
+    if (room.game.kind !== 'draw') return { ok: false, error: 'WRONG_GAME' };
+    if (room.players.get(playerId)?.waiting) return { ok: false, error: 'NOT_PLAYING' };
+
+    const error = room.game.submitDrawing(playerId, payload.round, payload.drawing, payload.final);
+    return error ? { ok: false, error } : { ok: true, data: null };
   }
 
   /** Vuelve al lobby conservando la party y los jugadores. */

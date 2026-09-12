@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { GAME_MODES, PRECISION, SCORING } from '@flagazo/shared';
-import type { AnswerFeedback, GameModeId, GamePlayer, GameSnapshot } from '@flagazo/shared';
+import type { AnswerFeedback, GameModeId, GamePlayer, GuessSnapshot } from '@flagazo/shared';
 import { AdSlot } from '../components/AdSlot';
 import { Button } from '../components/Button';
 import { FlagImage } from '../components/FlagImage';
+import { WaitingPlayers } from '../components/WaitingPlayers';
 import { useLocale, useT } from '../i18n';
 import { avatarColor, avatarInitial } from '../lib/avatar';
 import { errorMessage } from '../lib/errors';
@@ -13,6 +14,7 @@ import { useReorder } from '../lib/useReorder';
 import { useCountdownTick, useGameSounds } from '../audio/useGameSounds';
 import { leaveParty, rematch, sendAnswer } from '../net/party';
 import { selectIsHost, useAppStore } from '../store/useAppStore';
+import { DrawBattleScreen } from './DrawBattleScreen';
 import './GameScreen.css';
 
 export function GameScreen() {
@@ -26,6 +28,12 @@ export function GameScreen() {
   // Entre que termina la partida y llega el snapshot nuevo puede faltar el estado.
   if (!room || !game) return null;
 
+  // Cada juego tiene su pantalla. La party, el ranking y los botones son los mismos.
+  if (game.kind === 'draw') return <DrawBattleScreen game={game} />;
+  return <GuessGameScreen game={game} />;
+}
+
+function GuessGameScreen({ game }: { game: GuessSnapshot }) {
   const isPlaying = game.phase === 'flag' || game.phase === 'reveal' || game.phase === 'countdown';
 
   return (
@@ -50,7 +58,7 @@ export function GameScreen() {
 
 // ── Encabezado ──────────────────────────────────────────────
 
-function GameHeader({ game }: { game: GameSnapshot }) {
+function GameHeader({ game }: { game: GuessSnapshot }) {
   const t = useT();
   const label =
     game.totalRounds === 1
@@ -79,7 +87,7 @@ function GameHeader({ game }: { game: GameSnapshot }) {
  * (que es lo que se mueve bandera a bandera) y las rondas ganadas, que es el
  * marcador que define la partida.
  */
-function Standings({ game }: { game: GameSnapshot }) {
+function Standings({ game }: { game: GuessSnapshot }) {
   const myId = useAppStore((s) => s.session.playerId);
   const t = useT();
   const listRef = useRef<HTMLOListElement>(null);
@@ -162,32 +170,9 @@ function multiplierFor(streak: number): number {
   return 1.5;
 }
 
-/**
- * Los que entraron con la partida ya empezada.
- *
- * Están en la party pero no en la partida, así que no aparecen en la tabla:
- * sin esto no habría ninguna señal de que están ahí esperando.
- */
-function WaitingPlayers() {
-  // Se selecciona el array tal cual y se filtra afuera: un selector que devuelve
-  // un array nuevo en cada llamada hace que zustand vea siempre un cambio y
-  // entre en un bucle de renders.
-  const players = useAppStore((s) => s.room?.players);
-  const t = useT();
-  const waiting = players?.filter((player) => player.waiting) ?? [];
-  if (waiting.length === 0) return null;
-
-  return (
-    <p className="standings__waiting">
-      <span className="standings__waiting-label">{t.game.playingNext}</span>
-      {waiting.map((player) => player.nickname).join(', ')}
-    </p>
-  );
-}
-
 // ── Cuenta regresiva ────────────────────────────────────────
 
-function Countdown({ game }: { game: GameSnapshot }) {
+function Countdown({ game }: { game: GuessSnapshot }) {
   const seconds = useSecondsLeft(game.endsAt);
   const t = useT();
   useCountdownTick(seconds, true);
@@ -207,7 +192,7 @@ function Countdown({ game }: { game: GameSnapshot }) {
 
 // ── Bandera y respuesta ─────────────────────────────────────
 
-function FlagStage({ game }: { game: GameSnapshot }) {
+function FlagStage({ game }: { game: GuessSnapshot }) {
   const t = useT();
   const locale = useLocale();
   const revealing = game.phase === 'reveal';
@@ -242,7 +227,7 @@ function FlagStage({ game }: { game: GameSnapshot }) {
   );
 }
 
-function ActiveFlag({ game, progress }: { game: GameSnapshot; progress: number }) {
+function ActiveFlag({ game, progress }: { game: GuessSnapshot; progress: number }) {
   const seconds = useSecondsLeft(game.endsAt);
   const t = useT();
   const remaining = 1 - progress;
@@ -280,7 +265,7 @@ function ActiveFlag({ game, progress }: { game: GameSnapshot; progress: number }
   );
 }
 
-function AnswerForm({ game }: { game: GameSnapshot }) {
+function AnswerForm({ game }: { game: GuessSnapshot }) {
   const myId = useAppStore((s) => s.session.playerId);
   const pushToast = useAppStore((s) => s.pushToast);
   const t = useT();
@@ -372,7 +357,7 @@ function FeedbackLine({ feedback }: { feedback: AnswerFeedback }) {
 
 // ── Revelación ──────────────────────────────────────────────
 
-function Reveal({ game }: { game: GameSnapshot }) {
+function Reveal({ game }: { game: GuessSnapshot }) {
   const myId = useAppStore((s) => s.session.playerId);
   const t = useT();
   const locale = useLocale();
@@ -430,7 +415,7 @@ function Reveal({ game }: { game: GameSnapshot }) {
 
 // ── Resumen de ronda y resultados ───────────────────────────
 
-function RoundSummary({ game }: { game: GameSnapshot }) {
+function RoundSummary({ game }: { game: GuessSnapshot }) {
   const t = useT();
   // Quién ganó la ronda que acaba de cerrar: el que más puntos hizo en ella.
   const byLastRound = [...game.players].sort((a, b) => b.lastRoundPoints - a.lastRoundPoints);
@@ -463,7 +448,7 @@ function RoundSummary({ game }: { game: GameSnapshot }) {
   );
 }
 
-function Results({ game }: { game: GameSnapshot }) {
+function Results({ game }: { game: GuessSnapshot }) {
   const isHost = useAppStore(selectIsHost);
   const pushToast = useAppStore((s) => s.pushToast);
   const t = useT();

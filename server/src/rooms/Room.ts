@@ -12,7 +12,7 @@ import type {
   RoomPhase,
   RoomState,
 } from '@flagazo/shared';
-import type { GameEngine } from '../game/GameEngine';
+import type { ActiveGame } from '../game/Game';
 
 /** Un jugador dentro de una party (estado interno del servidor). */
 export interface RoomPlayer {
@@ -41,8 +41,8 @@ export class Room {
   phase: RoomPhase = 'lobby';
   settings: GameSettings = { ...DEFAULT_GAME_SETTINGS };
   visibility: PartyVisibility = DEFAULT_VISIBILITY;
-  /** Motor de la partida en curso, o null si están en el lobby. */
-  game: GameEngine | null = null;
+  /** Motor de la partida en curso, del juego que sea, o null si están en el lobby. */
+  game: ActiveGame | null = null;
 
   constructor(
     readonly code: string,
@@ -154,11 +154,14 @@ export class Room {
       hostNickname: host.nickname,
       players: this.players.size,
       maxPlayers: MAX_PLAYERS_PER_PARTY,
+      kind: this.settings.kind,
       mode: this.settings.mode,
       difficulty: this.settings.difficulty,
       totalRounds: this.settings.totalRounds,
       flagsPerRound: this.settings.flagsPerRound,
       secondsPerFlag: this.settings.secondsPerFlag,
+      drawRounds: this.settings.drawRounds,
+      drawSeconds: this.settings.drawSeconds,
       ageMs: Date.now() - this.createdAt,
     };
   }

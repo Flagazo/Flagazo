@@ -1,6 +1,9 @@
 # 🏁 Flagazo
 
-Party game multijugador en tiempo real: todos ven la misma bandera y gana el que la reconoce primero.
+Party game multijugador en tiempo real con dos juegos:
+
+- **🎯 Flag Guess** — todos ven la misma bandera y gana el que la reconoce primero.
+- **🎨 Draw Battle** — todos reciben el mismo país, dibujan su bandera de memoria y gana el mejor dibujo.
 
 > Estado: **Plan completo (Fases 1–7)** — parties con lobby y host, y partidas completas: la misma bandera
 > para todos, timer sincronizado, puntuación con velocidad y rachas, y respuestas en
@@ -220,6 +223,28 @@ En el lobby, arriba de todo, ahora hay un selector de **Modo**. Cada uno cambia 
    Empezá una partida pública y vas a ver que desaparece del buscador; con la revancha
    vuelve.
 
+### Qué probar en Draw Battle
+
+El segundo juego: todos reciben el mismo país y dibujan su bandera de memoria al mismo
+tiempo. El servidor compara los dibujos con la bandera real y el mejor se lleva el punto.
+El diseño completo, y el porqué de cada decisión, está en [`docs/DRAW_BATTLE.md`](docs/DRAW_BATTLE.md).
+
+1. **Elegir el juego:** en el lobby, arriba de la configuración, tocá 🎨 **Draw Battle**.
+   La configuración cambia: rondas (5–20), tiempo para dibujar (30–90 s) y qué te toca
+   (el nombre del país, o la bandera unos segundos y después de memoria).
+2. **Dibujar:** pincel en tres grosores, borrador, deshacer, rehacer, borrar todo y 15
+   colores. Con dos pestañas se juega de a dos. **Terminar** bloquea tu lienzo; si
+   terminan todos, la ronda se corta.
+3. **Celular:** abrí el juego desde el celu. El lienzo ocupa el ancho, arrastrar no hace
+   scroll ni zoom y todo entra en una pantalla sin scrollear.
+4. **F5 a mitad del dibujo:** volvés a la misma ronda con tu dibujo intacto.
+5. **Revelación:** aparecen los dibujos de a uno, después la bandera real, después los
+   puntajes y el ganador. Tu tarjeta muestra de dónde salió tu número.
+6. **No castiga el estilo:** una bandera correcta rellenada a garabatos saca casi lo
+   mismo que una prolija. Una bien pintada con los colores equivocados, poco.
+7. **Olvidarse del elemento importante cuesta:** Japón sin el disco, Canadá sin la hoja
+   o Suiza sin la cruz sacan poco aunque el resto esté perfecto.
+
 ## Publicidad
 
 Hay dos espacios preparados: **el lobby** (mientras se espera a los amigos) y **la pantalla
@@ -305,6 +330,20 @@ npm run build:flags
 Tarda un par de minutos porque va de a una: Commons corta con `429` si se le pide en paralelo.
 Cada bandera se guarda con **su proporción oficial** y el cliente la muestra con
 `object-fit: contain`, así ninguna se estira ni se recorta.
+
+## Regenerar las referencias de Draw Battle
+
+```bash
+npm run build:flag-refs
+```
+
+Rasteriza cada bandera, clasifica sus píxeles en los 15 colores del juego y guarda el
+resultado en `server/src/data/flagReferences.json`. Hay que correrlo **después de
+`build:flags`** y **si se cambia un color o una penalización de la paleta**: un test
+compara la huella de la paleta con la de las referencias y avisa si quedaron viejas.
+
+Con `-- --preview jp,br,us` además dibuja esas banderas en la consola, como quedaron
+leídas.
 
 ## Regenerar el dataset de países
 
@@ -395,6 +434,8 @@ nginx o Caddy adelante para el HTTPS.
 | `npm start` | Arranca el build de producción |
 | `npm test` | Tests (validaciones + integración real con Socket.IO) |
 | `npm run typecheck` | Chequeo de tipos de los tres paquetes |
+| `npm run build:flag-refs` | Regenera las referencias de Draw Battle (ver abajo) |
+| `npx tsx scripts/calibrate-draw-scoring.ts` | Tabla de puntajes de Draw Battle sobre dibujos de prueba |
 
 ## Estructura
 
