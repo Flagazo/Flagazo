@@ -27,3 +27,31 @@
   align-items: center;
   gap: 8px;
 }
+
+/*
+ * En un celular no entran el logo, el idioma, el sonido, la conexión y la cuenta
+ * con sus tamaños de escritorio. Se achican los espacios y, si está el botón de
+ * la cuenta, la conexión queda solo en el punto de color: el contador de
+ * jugadores conectados es lo que menos se extraña.
+ */
+@media (max-width: 480px) {
+  .topbar {
+    gap: 8px;
+  }
+
+  .topbar__right {
+    gap: 6px;
+  }
+
+  .topbar .lang__option {
+    padding: 0 7px;
+  }
+
+  .topbar__right:has(.account__chip, .account-signin) .conn--connected .conn__stat {
+    display: none;
+  }
+
+  .topbar__right:has(.account__chip, .account-signin) .conn--connected {
+    padding: 6px 9px;
+  }
+}

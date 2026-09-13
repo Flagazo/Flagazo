@@ -61,4 +61,13 @@
   .conn__ping {
     display: none;
   }
+  /*
+   * Conectado, el punto verde ya lo dice: el texto se guarda para cuando hay
+   * algo que avisar. Sin esto la barra no entraba en un celular (y con el botón
+   * de la cuenta, menos).
+   */
+  .conn--connected .conn__label,
+  .conn--connected .conn__sep {
+    display: none;
+  }
 }

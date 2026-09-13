@@ -17,10 +17,13 @@ import type {
   PublicParty,
   Result,
 } from '@flagazo/shared';
+import { randomUUID } from 'node:crypto';
 import type { AnswerOutcome } from '../game/FlagGuessGame';
 import { createGame } from '../game/Game';
+import type { PlayerResult } from '../game/Game';
 import { createLogger } from '../lib/log';
 import { Room } from './Room';
+import type { PlayerAccount } from './Room';
 import { generatePartyCode } from './codes';
 
 const log = createLogger('rooms');
@@ -29,6 +32,20 @@ const log = createLogger('rooms');
 export interface ActingPlayer {
   id: string;
   nickname: string;
+  /** La cuenta con la que juega, o null/ausente si es invitado. */
+  account?: PlayerAccount | null;
+}
+
+/** Una partida terminada, lista para grabar estadísticas. */
+export interface FinishedMatch {
+  /** Generado al arrancar. Grabar dos veces el mismo no suma nada. */
+  matchId: string;
+  kind: 'guess' | 'draw';
+  mode: string | null;
+  startedAt: Date;
+  endedAt: Date;
+  /** Cada jugador con la cuenta con la que arrancó, o null si era invitado. */
+  players: Array<PlayerResult & { account: PlayerAccount | null }>;
 }
 
 /**
@@ -40,6 +57,8 @@ export interface RoomHooks {
   onState(room: Room): void;
   /** Este jugador dejó de pertenecer a la party. */
   onPlayerRemoved(playerId: string, code: string, reason: LeaveReason): void;
+  /** Terminó una partida. Se llama una sola vez por partida. */
+  onGameFinished?(match: FinishedMatch): void;
 }
 
 /** Tiempos de gracia. Se inyectan para que los tests no tengan que esperar 30 segundos. */
@@ -129,6 +148,8 @@ export class RoomManager {
     if (!room) return fail('NOT_FOUND');
     if (room.bannedIds.has(player.id)) return fail('KICKED');
     if (room.isFull()) return fail('FULL');
+    // La misma cuenta dos veces en la sala contaría doble en el ranking.
+    if (player.account && room.hasAccount(player.account.userId)) return fail('ACCOUNT_IN_PARTY');
     if (room.hasNickname(player.nickname)) return fail('NICK_TAKEN');
 
     room.addPlayer(player);
@@ -201,6 +222,27 @@ export class RoomManager {
     return parties.slice(0, MAX_PUBLIC_PARTIES_LISTED);
   }
 
+  /**
+   * Cambia la cuenta de un jugador que ya está en una sala: inició o cerró sesión,
+   * o cambió la foto. Devuelve false si no se pudo aplicar porque esa cuenta ya
+   * juega en la sala con otro jugador; en ese caso sigue como estaba.
+   */
+  setAccount(playerId: string, account: PlayerAccount | null): boolean {
+    const room = this.roomOf(playerId);
+    const player = room?.players.get(playerId);
+    if (!room || !player) return true;
+    if (account && room.hasAccount(account.userId, playerId)) return false;
+
+    const before = player.account;
+    const same =
+      before?.userId === account?.userId &&
+      before?.avatarUrl === account?.avatarUrl &&
+      before?.username === account?.username;
+    player.account = account;
+    if (!same) this.hooks.onState(room);
+    return true;
+  }
+
   /** Sincroniza un cambio de nickname hecho estando dentro de una party. */
   rename(playerId: string, nickname: string, key: string): PartyResult<null> {
     const room = this.roomOf(playerId);
@@ -242,6 +284,7 @@ export class RoomManager {
       onChange: () => {
         if (room.game?.isFinished && room.phase !== 'results') {
           room.phase = 'results';
+          this.reportFinished(room);
           // Terminó la partida: los que se desconectaron en el camino ya no
           // están protegidos y vuelve a correrles el tiempo de gracia.
           this.scheduleAbsentPlayers(room);
@@ -249,6 +292,11 @@ export class RoomManager {
         this.hooks.onState(room);
       },
     });
+    room.match = {
+      id: randomUUID(),
+      startedAt: new Date(),
+      accounts: new Map([...room.players.values()].map((player) => [player.id, player.account])),
+    };
     // Nadie que se sume ahora juega esta partida: entra en espera.
     for (const player of room.players.values()) player.waiting = false;
 
@@ -302,9 +350,30 @@ export class RoomManager {
     return { ok: true, data: null };
   }
 
+  /** Le pasa el resultado a quien graba las estadísticas. Un error ahí nunca afecta a la sala. */
+  private reportFinished(room: Room) {
+    const game = room.game;
+    const match = room.match;
+    if (!game || !match || !this.hooks.onGameFinished) return;
+    try {
+      const results = game.results();
+      this.hooks.onGameFinished({
+        matchId: match.id,
+        kind: results.kind,
+        mode: results.kind === 'guess' ? room.settings.mode : null,
+        startedAt: match.startedAt,
+        endedAt: new Date(),
+        players: results.players.map((player) => ({ ...player, account: match.accounts.get(player.playerId) ?? null })),
+      });
+    } catch (error) {
+      log.error(`${room.code}: no se pudo armar el resultado de la partida`, error);
+    }
+  }
+
   private endGame(room: Room) {
     room.game?.dispose();
     room.game = null;
+    room.match = null;
     room.phase = 'lobby';
     // Los que miraron desde afuera ya son jugadores para la próxima.
     for (const player of room.players.values()) player.waiting = false;

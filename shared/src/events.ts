@@ -41,7 +41,9 @@ export type PartyError =
   | 'TARGET_NOT_FOUND'
   | 'CANT_KICK_HOST'
   | 'INVALID_SETTINGS'
-  | 'NO_CODE_AVAILABLE';
+  | 'NO_CODE_AVAILABLE'
+  /** Esa cuenta ya está en la sala, desde otra pestaña o dispositivo. */
+  | 'ACCOUNT_IN_PARTY';
 
 /** Por qué el servidor sacó a un jugador de una party. */
 export type LeaveReason = 'left' | 'kicked' | 'closed' | 'timeout';
@@ -75,6 +77,19 @@ export interface ClientToServerEvents {
   ) => void;
 
   'time:sync': (payload: { clientSentAt: number }, ack: Ack<TimeSyncResponse>) => void;
+
+  /**
+   * La cuenta cambió (nuevo username, foto nueva): el servidor la vuelve a leer de
+   * la base y actualiza al jugador. No sirve para entrar a otra cuenta: para eso
+   * hay que reconectar, así el servidor lee la cookie de sesión.
+   */
+  'session:refreshAccount': (
+    payload: Record<string, never>,
+    ack: Ack<Result<{ nickname: string | null }, CommonError>>,
+  ) => void;
+
+  /** Cerró sesión: el jugador sigue jugando, pero como invitado. */
+  'session:signOut': (payload: Record<string, never>, ack: Ack<Result<null, CommonError>>) => void;
 
   // ── Parties ───────────────────────────────────────────────
   /** Crea una party. Si no se dice nada, nace privada. */

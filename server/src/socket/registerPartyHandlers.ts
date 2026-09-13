@@ -36,8 +36,8 @@ export function registerPartyHandlers(
   rooms: RoomManager,
 ) {
   /** Un jugador sin nickname no puede tocar parties: no tendría nombre para mostrar. */
-  function actor(): { id: string; nickname: string } | null {
-    return session.nickname ? { id: session.playerId, nickname: session.nickname } : null;
+  function actor(): { id: string; nickname: string; account: Session['account'] } | null {
+    return session.nickname ? { id: session.playerId, nickname: session.nickname, account: session.account } : null;
   }
 
   socket.on(

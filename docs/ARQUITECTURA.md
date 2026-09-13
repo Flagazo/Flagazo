@@ -539,3 +539,203 @@ cambió en la arquitectura general.
 
 > **Nota.** El límite por mensaje de Socket.IO pasó de 16 KB a 64 KB. Sigue siendo una
 > protección contra abusos; el dibujo más grande que permiten los topes ronda los 48 KB.
+
+## 21. Cuentas de usuario
+
+Las cuentas son **opcionales**: se sigue entrando con un nickname y jugando sin
+registrarse. Una cuenta guarda el perfil y, en las próximas fases, estadísticas y
+rankings. Se construyen por fases; esta sección describe lo que ya existe.
+
+**Estado actual: Fase 7** — base de datos, registro y login con email y contraseña,
+verificación del email, recuperación de la contraseña, "Continuar con Google" y
+"Continuar con Discord", perfil con foto, la cuenta integrada a las salas,
+estadísticas y ranking mensual.
+
+> **Decisión.** Postgres con Drizzle ORM. Es la primera persistencia del proyecto y
+> guarda **solo** cuentas y sesiones: las parties y las partidas siguen en memoria, y un
+> invitado nunca toca la base. Drizzle es TypeScript puro, sin binarios, y genera
+> migraciones SQL que quedan en `server/drizzle/` y se aplican al arrancar el servidor
+> (una sola instancia: no hay carreras entre procesos).
+
+> **Decisión.** La base no está en Render: el Postgres gratis de Render vence a los 30
+> días y el disco del plan gratis se borra en cada deploy. Se usa Neon (Postgres
+> estándar, región Ohio como el servidor). Mudarla es cambiar `DATABASE_URL`.
+
+> **Decisión.** Sin `DATABASE_URL`, en producción las cuentas se apagan (`/api/me`
+> responde `accountsEnabled: false` y el cliente no muestra nada) y el juego funciona
+> igual. Si la base no responde al arrancar, lo mismo. En desarrollo se usa PGlite
+> (Postgres en WebAssembly, dentro del proceso) guardado en `server/.data/`, y los tests
+> usan PGlite en memoria: no hay que instalar Postgres ni Docker.
+
+> **Decisión.** Sesión en el servidor con cookie `HttpOnly`, no JWT. Hay una sola
+> instancia con base de datos, y cerrar sesión o cambiar la contraseña tiene que cortar
+> el acceso en el momento; con JWT haría falta una lista de revocación, que es volver a
+> tener sesiones pero con más piezas. En la base se guarda el SHA-256 del token, nunca el
+> token. La cookie es `SameSite=Lax`, `Secure` detrás del HTTPS de Render (`trust proxy`
+> en 1 salto), y dura 30 días renovables con "mantener sesión" o hasta cerrar el
+> navegador (con tope de 24 h en el servidor) sin él.
+
+> **Decisión.** El token de juego (`sessionStorage`, uno por pestaña) **no cambia**. No
+> es una credencial: identifica al jugador dentro de las salas y permite varias pestañas
+> como jugadores distintos. La cuenta es otra capa, que en la Fase 5 se engancha a la
+> sesión de juego en el handshake del socket.
+
+> **Decisión.** Argon2id (`@node-rs/argon2`, 19 MiB, 2 pasadas) para las contraseñas.
+> scrypt con parámetros equivalentes pide más de 100 MB por hash, y el plan tiene 512 MB.
+> Las reglas de contraseña siguen NIST: largo mínimo 8, sin exigir símbolos, rechazando
+> las más comunes y el propio email o username.
+
+> **Decisión.** CSRF en capas: cookie `SameSite=Lax`, cuerpo solo JSON, y chequeo de
+> `Sec-Fetch-Site` (o `Origin` contra `Host` en navegadores viejos) en toda escritura.
+
+> **Decisión.** Login sin enumeración: cuenta inexistente y contraseña incorrecta
+> responden lo mismo y tardan lo mismo (se hashea igual). Límites en memoria por IP y
+> por email.
+
+> **Decisión.** Todo lo que se puede pedir con solo un email responde **siempre igual**:
+> registrarse, reenviar el código, recuperar la contraseña. Lo distinto se le dice al
+> dueño del email, por email. Registrarse con un email que ya tiene cuenta responde lo
+> mismo que uno nuevo y al dueño le llega "ya tienes una cuenta" (uno por hora como
+> mucho). Por eso registrarse **no inicia sesión**: se entra al verificar el código.
+
+> **Decisión.** Códigos de 6 dígitos (`AUTH_CODE` en `shared`): vencen a los 10 minutos,
+> se usan una vez, admiten 5 intentos, y se pueden pedir cada 60 s y hasta 5 por hora
+> (25 intentos por hora contra un millón de combinaciones). Se guarda un HMAC-SHA256 con
+> `AUTH_SECRET`, que incluye la cuenta y el propósito: un SHA-256 simple de 6 dígitos se
+> revierte en un segundo. Solo vale el **último** código emitido, usado o no; si se mirara
+> "el último sin usar", al usar uno el anterior volvería a servir. Consumir y sumar
+> intentos son `UPDATE` condicionales, así dos pedidos simultáneos no usan el mismo código.
+
+> **Decisión.** Los errores de código distinguen incorrecto, vencido y bloqueado. Los dos
+> últimos revelan que ese email tiene un registro pendiente de verificar. Es una filtración
+> chica y aceptada: sin ella no se le puede decir a nadie "tu código venció". "Ya
+> verificado" solo se responde a quien trae el código que ya se usó.
+
+> **Decisión.** Con la contraseña correcta y el email sin verificar, el login responde
+> `EMAIL_NOT_VERIFIED` y manda un código: quien sabe la contraseña ya es el dueño.
+> Recuperar la contraseña verifica el email (el código lo prueba) y cierra todas las
+> sesiones abiertas. Las cuentas que no verifican en 7 días se borran y liberan el nombre.
+
+> **Decisión.** Los emails salen por la API HTTPS de Resend, no por SMTP: el plan gratis
+> de Render bloquea los puertos 25, 465 y 587. El remitente es `flagazo@flagazo.com`;
+> Resend usa el subdominio `send.flagazo.com` y `resend._domainkey`, así que no toca el
+> MX ni el SPF de Google Workspace en la raíz. Se mandan sin esperar la respuesta (el
+> registro tarda lo mismo haya o no email que mandar) y un fallo solo se loggea, sin
+> asunto ni texto porque llevan el código. En desarrollo el email se escribe en la
+> consola del servidor.
+
+> **Decisión.** Google y Discord con OAuth 2.0 (código de autorización), sin librerías:
+> son dos pedidos HTTP y la parte delicada, el `state`, conviene tenerla a la vista. El
+> `state` y el verificador PKCE (Google lo soporta; Discord se cubre con `state` y el
+> secreto) viajan en una cookie HttpOnly firmada con `AUTH_SECRET`, de 10 minutos y
+> `Path=/api/auth`. Así la vuelta queda atada al navegador que empezó: si alguien le
+> hace abrir a otro el link de vuelta con su propio código, el `state` no coincide y la
+> víctima no queda adentro de la cuenta del atacante. El perfil se pide al endpoint
+> oficial con el token recién obtenido, así que no hace falta validar firmas de JWT.
+
+> **Decisión.** Las identidades (`auth_identities`) se buscan por el id del proveedor
+> (`sub` en Google, `id` en Discord), nunca por el email, que en el proveedor cambia.
+> Al volver, en orden: (1) ya vinculado → esa cuenta; (2) el proveedor **garantiza** el
+> email y hay una cuenta con él → se vinculan, y si esa cuenta nunca verificó su email se
+> le borra la contraseña y se cierran sus sesiones, porque quien la creó no demostró que
+> el email fuera suyo y el proveedor sí (evita el "pre-hijacking"); (3) el email coincide
+> pero **no** está garantizado → `OAUTH_EMAIL_IN_USE`, ni se vincula ni se duplica; (4)
+> cuenta nueva, con email solo si está verificado. Con una sesión iniciada, el mismo
+> flujo vincula en vez de entrar. El username sale del nombre del proveedor, limpio para
+> que cumpla las reglas del nickname y con un número si está ocupado. La foto del
+> proveedor se guarda en la identidad para ofrecerla como avatar en la Fase 4.
+
+> **Decisión.** Las fotos de perfil se guardan **en Postgres** (`avatars`, `bytea`), no en
+> disco ni en un almacenamiento de objetos: el disco del plan gratis de Render se borra en
+> cada deploy, y R2/S3 sumarían otra cuenta y otras credenciales para unos pocos KB por
+> jugador. Cada foto se procesa con `sharp`: se decodifica (lo que no abra como JPG, PNG o
+> WebP se rechaza, diga lo que diga la extensión), se limita a 4096 px por lado antes de
+> abrirla (contra "bombas" de píxeles), se recorta a 256×256 y se vuelve a codificar en
+> WebP sin metadatos (EXIF, GPS). Pesa 10–25 KB. Se sirve en `/api/avatars/<id>.webp?v=N`
+> con caché de un año: `N` sube con cada foto nueva. Si algún día pesan demasiado, se
+> mudan a R2 sin cambiar la URL pública.
+
+> **Decisión.** El cliente achica la foto a 512 px antes de subirla: el servidor acepta
+> 2 MB y una foto de celular pesa 3–8 MB. Las fotos de Google o Discord solo se bajan
+> de sus CDN (`lh3.googleusercontent.com`, `cdn.discordapp.com`), sin seguir redirecciones:
+> sin esa lista, "bajá la foto de esta URL" serviría para que el servidor haga pedidos a
+> la red interna (SSRF). Una cuenta nueva con Google o Discord arranca con esa foto.
+
+> **Decisión.** Cuenta y jugador son dos cosas. El **jugador** (`RoomPlayer`) es "esta
+> conexión en esta sala" y existe siempre; la **cuenta** es la persona que la usa y puede
+> no haber ninguna. `RoomPlayer.account` es `{ userId, username, avatarUrl }` o `null`
+> (invitado). El snapshot público solo agrega `registered` y `avatarUrl`: nada privado
+> de la cuenta (email, sesión) llega a las salas. `rooms/` sigue sin saber de la base ni
+> de la red: el tipo `PlayerAccount` vive en `rooms/Room.ts`.
+
+> **Decisión.** La cuenta se asocia en el **handshake del socket**, leyendo la cookie de
+> sesión que el navegador manda sola (misma página, mismo origen). Es la única prueba
+> válida: el token de juego viaja en `sessionStorage` y no dice quién es la persona. Si
+> la base falla, se entra como invitado. Con cuenta, el nombre de juego es el username
+> (el servidor lo impone; `session:setNickname` lo ignora); si en la sala ya lo usa otro,
+> se queda con el nombre que tenía. Después de iniciar sesión con contraseña, el cliente
+> reconecta el socket para que el servidor lea la cookie nueva (el token de juego es el
+> mismo, así que no sale de la sala). `session:refreshAccount` relee de la base la cuenta
+> que la sesión **ya tenía** (nombre o foto nuevos) y no sirve para tomar otra;
+> `session:signOut` la desasocia y el jugador sigue como invitado.
+
+> **Decisión.** La misma cuenta no puede estar dos veces en una sala (`ACCOUNT_IN_PARTY`):
+> dos pestañas contarían doble en las estadísticas y el ranking. Los invitados sí pueden
+> abrir varias pestañas, como antes. La foto que se ve en las partidas sale del snapshot
+> de la sala, no del de la partida: los motores de juego no saben nada de cuentas.
+
+> **Decisión.** Las estadísticas se calculan **solo en el servidor**. Cada motor entrega
+> `results()` al terminar (puesto, si ganó, si participó, y lo propio de su juego), y
+> `RoomManager` avisa una sola vez por partida con `onGameFinished`. Las cuentas se
+> fijan al empezar la partida (`room.match.accounts`): iniciar o cerrar sesión a mitad de
+> partida no cambia a quién se le carga. Si grabar falla, la sala sigue igual.
+
+> **Decisión.** Cada partida tiene un id (UUID) generado al arrancar. `StatsRecorder`
+> graba todo en una transacción que empieza con `INSERT INTO matches … ON CONFLICT DO
+> NOTHING`: si la partida ya estaba, no suma nada. Se escriben `match_players` (el
+> resultado de cada cuenta, con el que se puede reconstruir cualquier ranking),
+> `user_stats` (totales para el perfil) y `leaderboard_entries`. Los invitados no se
+> graban.
+
+> **Decisión.** El ranking es genérico: `leaderboard_entries(period, metric, user_id,
+> value)`. `period` es `YYYY-MM` o `all`; las métricas hoy son `points`, `wins` y
+> `correct`. **No se borra nada al cambiar de mes**: el ranking actual es una consulta
+> con el mes en curso, y los anteriores quedan. El mes se decide con
+> `LEADERBOARD_TIMEZONE` (UTC por defecto). Empates: mismo valor, mismo puesto; en la
+> lista va primero quien llegó antes a ese valor (`updated_at`).
+
+> **Decisión.** `points` suma los puntos de Flag Guess y los de Draw Battle × 6: una
+> partida de cada juego dura parecido, pero la de adivinar deja miles de puntos y la de
+> dibujar, cientos (`RANKING.drawScoreWeight`). Una partida cuenta para el ranking con
+> al menos **2 jugadores que participaron** (respondieron o dibujaron), invitados
+> incluidos: si no, cualquiera juega solo y suma sin límite. Las estadísticas del perfil
+> se guardan igual.
+
+> **Decisión.** Las cuentas se encienden solo con todo lo necesario: base, `AUTH_SECRET`
+> (32+ caracteres) y `RESEND_API_KEY`. Con una pieza faltante quedan apagadas y el
+> servidor lo dice en el log, en vez de aceptar registros que nadie podría verificar.
+
+La API vive en `server/src/http/api.ts`, montada en `/api` antes que el frontend:
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/me` | `{ accountsEnabled, account }` |
+| `POST /api/auth/register` | `{ username, email, password, remember, locale }` → 202, siempre igual; manda el código |
+| `POST /api/auth/verify-email` | `{ email, code, remember }` → verifica e inicia sesión |
+| `POST /api/auth/resend-verification` | `{ email, locale }` → siempre `ok` |
+| `POST /api/auth/login` | `{ email, password, remember, locale }` |
+| `POST /api/auth/forgot-password` | `{ email, locale }` → siempre `ok` |
+| `GET /api/auth/google`, `GET /api/auth/discord` | `?remember=1` → redirige al proveedor |
+| `GET /api/auth/{google,discord}/callback` | Vuelta del proveedor → redirige a `/?auth=ok|created|linked|error&reason=…` |
+| `PATCH /api/me` | `{ username }` |
+| `POST /api/me/avatar` | Cuerpo: la imagen (`image/jpeg`, `png` o `webp`, hasta 2 MB) |
+| `POST /api/me/avatar/provider` | `{ provider }` → usa la foto de Google o Discord |
+| `DELETE /api/me/avatar` | Vuelve al avatar de color |
+| `GET /api/avatars/<id>.webp` | La foto, pública y cacheable |
+| `GET /api/me/stats` | Estadísticas acumuladas de la cuenta |
+| `GET /api/leaderboard/monthly` | `?period=YYYY-MM|all&metric=points|wins|correct` → tabla, posición propia y meses con datos. Sin `period`, el mes actual. Público |
+| `POST /api/auth/reset-password` | `{ email, code, password, remember }` → cambia la contraseña, cierra las demás sesiones y entra |
+| `POST /api/auth/logout` | Borra la sesión y la cookie |
+
+El username sigue las mismas reglas que el nickname (es el nombre dentro del juego) y
+es único sin distinguir mayúsculas ni tildes (`nicknameKey`).

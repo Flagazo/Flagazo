@@ -5,21 +5,51 @@ import { Server } from 'socket.io';
 import { config } from './config';
 import { SessionStore } from './socket/SessionStore';
 import { resolveFlagToken, sweepFlagTokens } from './game/flagTokens';
+import { createApiRouter } from './http/api';
+import type { ApiLimits, OAuthOptions } from './http/api';
+import type { AccountDeps } from './auth/accounts';
+import type { ProfileOptions } from './auth/profile';
+import { createLogger } from './lib/log';
+import { createAccountResolver } from './socket/accounts';
+import { StatsRecorder } from './stats/recorder';
 import { createRoomManager } from './socket/partyChannel';
 import { registerSocketHandlers } from './socket/registerSocketHandlers';
 import type { GameServer } from './types';
+
+export interface GameServerOptions {
+  /** Lo que necesitan las cuentas (base, secreto, emails). Sin esto el juego funciona igual, sin cuentas. */
+  accounts?: AccountDeps | null;
+  apiLimits?: ApiLimits;
+  /** Google y Discord, si están configurados. */
+  oauth?: OAuthOptions;
+  /** Para los tests: de dónde se bajan las fotos de los proveedores. */
+  profile?: ProfileOptions;
+}
+
+const log = createLogger('server');
 
 /**
  * Construye la app completa (HTTP + Socket.IO) sin empezar a escuchar.
  * index.ts la arranca; los tests la levantan en un puerto aleatorio.
  */
-export function createGameServer() {
+export function createGameServer(options: GameServerOptions = {}) {
   const app = express();
   app.disable('x-powered-by');
+  /*
+   * Render pone un proxy delante que termina el HTTPS. Con esto Express confía en
+   * sus X-Forwarded-*: sabe que el pedido fue seguro (para marcar la cookie como
+   * Secure) y cuál es la IP real (para limitar intentos por IP). Un solo salto:
+   * confiar en más dejaría a cualquiera inventarse la IP con un header.
+   */
+  app.set('trust proxy', 1);
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, uptime: Math.round(process.uptime()) });
   });
+
+  // Cuentas. Antes que el frontend, para que /api nunca caiga en el index.html.
+  const api = createApiRouter(options.accounts ?? null, options.apiLimits, options.oauth, options.profile);
+  app.use('/api', api.router);
 
   /**
    * Bandera activa, servida por un token aleatorio.
@@ -75,12 +105,25 @@ export function createGameServer() {
   });
 
   const sessions = new SessionStore(config.sessionTtlMs);
-  const rooms = createRoomManager(io, sessions);
-  registerSocketHandlers(io, sessions, rooms);
+  /*
+   * Al terminar cada partida se graban las estadísticas de quienes jugaron con
+   * cuenta. Sin esperar: la sala sigue a resultados enseguida, y si la base falla
+   * solo se pierde el registro de esa partida, nunca la partida.
+   */
+  const recorder = options.accounts ? new StatsRecorder(options.accounts.db, options.accounts.statsTimeZone ?? 'UTC') : null;
+  const rooms = createRoomManager(io, sessions, recorder ? (match) => {
+    recorder.record(match).catch((error: unknown) => {
+      log.error('No se pudieron grabar las estadísticas de la partida', error instanceof Error ? error.message : error);
+    });
+  } : undefined);
+  registerSocketHandlers(io, sessions, rooms, options.accounts ? createAccountResolver(options.accounts.db) : null);
 
   const sweepTimer = setInterval(() => {
     sessions.sweep();
     sweepFlagTokens();
+    api.sweep().catch((error: unknown) => {
+      log.warn('No se pudieron limpiar las sesiones vencidas', error instanceof Error ? error.message : error);
+    });
   }, 5 * 60 * 1000);
   sweepTimer.unref();
 

@@ -18,8 +18,8 @@ import { DrawCanvas } from '../components/draw/DrawCanvas';
 import type { Brush, DrawCanvasHandle } from '../components/draw/DrawCanvas';
 import { DrawToolbar } from '../components/draw/DrawToolbar';
 import { DrawingView } from '../components/draw/DrawingView';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import { useLocale, useT } from '../i18n';
-import { avatarColor, avatarInitial } from '../lib/avatar';
 import { errorMessage } from '../lib/errors';
 import { storage } from '../lib/storage';
 import { useProgress, useSecondsLeft } from '../lib/useServerClock';
@@ -111,9 +111,7 @@ function DrawStandings({ game }: { game: DrawSnapshot }) {
               .join(' ')}
           >
             <span className="standings__position">{position + 1}</span>
-            <span className="standings__avatar" style={{ background: avatarColor(player.playerId) }}>
-              {avatarInitial(player.nickname)}
-            </span>
+            <PlayerAvatar className="standings__avatar" playerId={player.playerId} nickname={player.nickname} />
             <span className="standings__name">{player.nickname}</span>
             <span className="draw-standings__status" aria-hidden="true">
               {drawing ? (player.finished ? '✓' : '✏️') : ''}
@@ -612,9 +610,7 @@ function DrawResults({ game }: { game: DrawSnapshot }) {
           {ranking.map((player, position) => (
             <li key={player.playerId} className={`ranking__row ${player.playerId === myId ? 'ranking__row--me' : ''}`}>
               <span className="ranking__position">{position + 1}</span>
-              <span className="ranking__avatar" style={{ background: avatarColor(player.playerId) }}>
-                {avatarInitial(player.nickname)}
-              </span>
+              <PlayerAvatar className="ranking__avatar" playerId={player.playerId} nickname={player.nickname} />
               <span className="ranking__name">{player.nickname}</span>
               <span className="ranking__score" title={t.draw.pointsTitle}>{player.points}</span>
               <span className="ranking__points" title={t.draw.averageTitle}>{average(player)}</span>

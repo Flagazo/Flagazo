@@ -1,8 +1,10 @@
 import { nicknameKey, validateNickname } from '@flagazo/shared';
-import type { Result, TimeSyncResponse } from '@flagazo/shared';
+import type { CommonError, Result, TimeSyncResponse } from '@flagazo/shared';
+import type { PlayerAccount } from '../rooms/Room';
 import type { RoomManager } from '../rooms/RoomManager';
 import type { GameServer, GameSocket } from '../types';
 import { createLogger } from '../lib/log';
+import type { AccountResolver } from './accounts';
 import { SessionStore } from './SessionStore';
 import type { Session } from './SessionStore';
 import { registerPartyHandlers } from './registerPartyHandlers';
@@ -16,8 +18,15 @@ const log = createLogger('socket');
  * Cada fase agrega sus handlers acá (partida en Fase 3, respuestas en Fase 4…),
  * siempre delegando la lógica en módulos propios para mantener este archivo corto.
  */
-export function registerSocketHandlers(io: GameServer, sessions: SessionStore, rooms: RoomManager) {
+export function registerSocketHandlers(
+  io: GameServer,
+  sessions: SessionStore,
+  rooms: RoomManager,
+  accounts: AccountResolver | null = null,
+) {
   let presenceTimer: NodeJS.Timeout | null = null;
+  /** La cuenta que trajo cada conexión en su handshake, hasta que se conecta del todo. */
+  const handshakeAccounts = new Map<string, PlayerAccount | null>();
 
   /** Agrupa cambios de presencia muy seguidos en un solo broadcast. */
   function broadcastPresence() {
@@ -29,9 +38,24 @@ export function registerSocketHandlers(io: GameServer, sessions: SessionStore, r
   }
 
   // Middleware de handshake: resuelve (o crea) la sesión antes de aceptar el socket.
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const { session } = sessions.resolve(socket.handshake.auth?.token);
     socket.data.sessionToken = session.token;
+    /*
+     * La cuenta sale de la cookie de sesión, que el navegador manda sola en el
+     * handshake (misma página, mismo origen). Es la única prueba válida: el token de
+     * juego viaja en sessionStorage y no dice nada de quién es la persona. Si la base
+     * falla, se entra igual como invitado: nunca se deja a nadie sin jugar.
+     */
+    let account: PlayerAccount | null = null;
+    if (accounts) {
+      try {
+        account = await accounts.byCookie(socket.handshake.headers.cookie);
+      } catch (error) {
+        log.warn('No se pudo leer la cuenta al conectar', error instanceof Error ? error.message : error);
+      }
+    }
+    handshakeAccounts.set(socket.id, account);
     next();
   });
 
@@ -43,16 +67,19 @@ export function registerSocketHandlers(io: GameServer, sessions: SessionStore, r
     }
 
     sessions.attachSocket(session, socket.id);
+    bindAccount(session, handshakeAccounts.get(socket.id) ?? null, rooms);
+    handshakeAccounts.delete(socket.id);
     log.info(`+ ${session.playerId} (${session.nickname ?? 'sin nick'}) · online ${sessions.countOnline()}`);
 
     socket.emit('session:ready', SessionStore.toInfo(session));
     broadcastPresence();
 
-    registerSessionHandlers(socket, session, rooms);
+    registerSessionHandlers(socket, session, rooms, accounts);
     registerPartyHandlers(io, socket, session, sessions, rooms);
     restoreParty(socket, session, rooms);
 
     socket.on('disconnect', (reason) => {
+      handshakeAccounts.delete(socket.id);
       sessions.detachSocket(session, socket.id);
       // Solo cuenta como ausencia si la sesión se quedó sin ningún socket:
       // durante una reconexión conviven el viejo y el nuevo por unos ms.
@@ -78,13 +105,64 @@ function restoreParty(socket: GameSocket, session: Session, rooms: RoomManager) 
   socket.emit('room:state', room.toState());
 }
 
-function registerSessionHandlers(socket: GameSocket, session: Session, rooms: RoomManager) {
+/**
+ * Asocia (o desasocia) la cuenta a la sesión de juego.
+ *
+ * Con cuenta, se juega con el username: se renombra al jugador, también dentro
+ * de la sala si está en una. Si ese nombre ya lo usa otro jugador de la sala, se
+ * queda con el nombre que tenía hasta la próxima sala. La foto y el "registrado"
+ * se actualizan en la sala al momento.
+ */
+function bindAccount(session: Session, account: PlayerAccount | null, rooms: RoomManager) {
+  session.account = account;
+  rooms.setAccount(session.playerId, account);
+  if (account && session.nickname !== account.username) {
+    const renamed = rooms.rename(session.playerId, account.username, nicknameKey(account.username));
+    if (renamed.ok) session.nickname = account.username;
+  }
+}
+
+function registerSessionHandlers(
+  socket: GameSocket,
+  session: Session,
+  rooms: RoomManager,
+  accounts: AccountResolver | null,
+) {
+  socket.on(
+    'session:refreshAccount',
+    safeHandler<Record<string, never>, Result<{ nickname: string | null }, CommonError>>(
+      'session:refreshAccount',
+      async (_payload, ack) => {
+        // Solo refresca la cuenta que ya tenía: no sirve para tomar otra.
+        if (session.account && accounts) {
+          bindAccount(session, await accounts.byId(session.account.userId), rooms);
+        }
+        ack({ ok: true, data: { nickname: session.nickname } });
+      },
+      (error) => ({ ok: false, error }),
+    ),
+  );
+
+  socket.on(
+    'session:signOut',
+    safeHandler<Record<string, never>, Result<null, CommonError>>(
+      'session:signOut',
+      (_payload, ack) => {
+        // Sigue jugando con el mismo nombre, pero ya como invitado.
+        bindAccount(session, null, rooms);
+        ack({ ok: true, data: null });
+      },
+      (error) => ({ ok: false, error }),
+    ),
+  );
+
   socket.on(
     'session:setNickname',
     safeHandler<{ nickname?: unknown }, Result<{ nickname: string }, string>>(
       'session:setNickname',
       (payload, ack) => {
-        const result = validateNickname(payload.nickname);
+        // Con cuenta, el nombre de juego es el username: se cambia desde el perfil.
+        const result = session.account ? validateNickname(session.account.username) : validateNickname(payload.nickname);
         if (!result.ok) {
           ack({ ok: false, error: result.error });
           return;

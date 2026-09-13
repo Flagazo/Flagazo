@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { SESSION_TOKEN_LENGTH, isValidSessionToken } from '@flagazo/shared';
 import type { SessionInfo } from '@flagazo/shared';
 import { config } from '../config';
+import type { PlayerAccount } from './accounts';
 
 /**
  * Una sesión representa a una persona en una pestaña del navegador.
@@ -15,6 +16,8 @@ export interface Session {
   token: string;
   playerId: string;
   nickname: string | null;
+  /** La cuenta con la que juega, si inició sesión. Se decide al conectar, por la cookie. */
+  account: PlayerAccount | null;
   /** Sockets activos de esta sesión (normalmente 0 o 1). */
   socketIds: Set<string>;
   lastSeenAt: number;
@@ -37,6 +40,7 @@ export class SessionStore {
       token: randomBytes(SESSION_TOKEN_LENGTH / 2).toString('hex'),
       playerId: randomBytes(6).toString('hex'),
       nickname: null,
+      account: null,
       socketIds: new Set(),
       lastSeenAt: Date.now(),
     };

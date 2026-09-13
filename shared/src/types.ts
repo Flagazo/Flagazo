@@ -58,6 +58,10 @@ export interface GameSettings {
 export interface PublicPlayer {
   id: string;
   nickname: string;
+  /** Juega con cuenta. Nada privado de la cuenta (email, sesión) viaja en el snapshot. */
+  registered: boolean;
+  /** Foto de la cuenta, o null (invitado, o cuenta sin foto). */
+  avatarUrl: string | null;
   connected: boolean;
   /** Entró con la partida ya empezada: mira y juega la revancha. */
   waiting: boolean;

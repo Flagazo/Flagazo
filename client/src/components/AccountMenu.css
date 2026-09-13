@@ -1,0 +1,119 @@
+.account {
+  position: relative;
+}
+
+.account__chip,
+.account-signin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: rgba(var(--panel-rgb), 0.72);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.account__chip {
+  padding: 0 12px 0 3px;
+  max-width: 180px;
+}
+
+.account-signin {
+  padding: 0 14px;
+  border-color: rgba(255, 201, 60, 0.5);
+  color: var(--yellow);
+}
+
+.account__chip:hover,
+.account-signin:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.account__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: 0 16px 36px var(--surface-shadow);
+  animation: pop-in 220ms var(--ease-pop) both;
+}
+
+.account__who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px 10px;
+  border-bottom: 1px solid var(--surface-border);
+  overflow: hidden;
+}
+
+.account__who small {
+  color: var(--text-muted);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account__item {
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* En el celular la barra ya va apretada: queda solo el avatar. */
+@media (max-width: 560px) {
+  .account__chip {
+    padding: 0 3px;
+  }
+
+  .account__name {
+    display: none;
+  }
+
+  /* Solo el ícono: el texto no entra al lado de todo lo demás. */
+  .account-signin {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .account-signin__label {
+    display: none;
+  }
+}
+
+@media (min-width: 561px) {
+  .account-signin__icon {
+    display: none;
+  }
+}

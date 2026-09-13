@@ -94,3 +94,26 @@
 .nickname-card__help.is-error {
   color: var(--red);
 }
+
+/* Invitación a crear cuenta, debajo del formulario. */
+.account-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: -12px;
+  animation: pop-in 460ms 320ms var(--ease-pop) both;
+}
+
+.account-prompt__text {
+  margin: 0;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.account-prompt__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}

@@ -18,6 +18,10 @@ export default defineConfig({
       '/flag/r': SERVER_URL,
       '/flags': SERVER_URL,
       '/health': SERVER_URL,
+      // Cuentas. Pasa por el proxy para que la cookie de sesión sea del mismo origen.
+      // Conserva el Host (el formato corto lo cambia): el servidor lo compara con
+      // el Origin para rechazar pedidos de otros sitios.
+      '/api': { target: SERVER_URL, changeOrigin: false },
     },
   },
 });

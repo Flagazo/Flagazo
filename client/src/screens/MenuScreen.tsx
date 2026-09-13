@@ -3,9 +3,9 @@ import type { FormEvent } from 'react';
 import { DEFAULT_VISIBILITY, isValidPartyCode } from '@flagazo/shared';
 import type { PartyVisibility } from '@flagazo/shared';
 import { Button } from '../components/Button';
+import { AccountAvatar } from '../components/AccountAvatar';
 import { CodeInput } from '../components/CodeInput';
 import { DonateButton } from '../components/DonateButton';
-import { avatarColor, avatarInitial } from '../lib/avatar';
 import { useT } from '../i18n';
 import { errorMessage } from '../lib/errors';
 import { createParty, joinParty } from '../net/party';
@@ -17,6 +17,8 @@ export function MenuScreen() {
   const playerId = useAppStore((s) => s.session.playerId) ?? nickname;
   const isConnected = useAppStore((s) => s.connection.status === 'connected');
   const goTo = useAppStore((s) => s.goTo);
+  const account = useAppStore((s) => s.account.user);
+  const accountsEnabled = useAppStore((s) => s.account.enabled);
   const pushToast = useAppStore((s) => s.pushToast);
   const t = useT();
 
@@ -57,14 +59,24 @@ export function MenuScreen() {
   return (
     <main className="screen menu-screen">
       <div className="player-chip">
-        <span className="player-chip__avatar" style={{ background: avatarColor(playerId) }}>
-          {avatarInitial(nickname)}
-        </span>
+        {/* Con cuenta, su foto (y su color); como invitado, el círculo de color de siempre. */}
+        <AccountAvatar
+          className="player-chip__avatar"
+          seed={account?.id ?? playerId}
+          name={nickname}
+          url={account?.avatarUrl ?? null}
+          size={44}
+        />
         <span className="player-chip__text">
           <small>{t.menu.playingAs}</small>
           <strong>{nickname}</strong>
         </span>
-        <button type="button" className="player-chip__edit" onClick={() => goTo('nickname')}>
+        {accountsEnabled && (
+          <button type="button" className="player-chip__edit player-chip__ranking" onClick={() => goTo('ranking')}>
+            🏆 {t.ranking.open}
+          </button>
+        )}
+        <button type="button" className="player-chip__edit" onClick={() => goTo(account ? 'profile' : 'nickname')}>
           {t.menu.change}
         </button>
       </div>

@@ -369,6 +369,33 @@ npm start
 Abrí **http://localhost:3001**. El servidor sirve el juego, las banderas y el tiempo real.
 El puerto se cambia con la variable de entorno `PORT`.
 
+## Cuentas de usuario
+
+Opcionales: se puede jugar sin cuenta como siempre. En desarrollo no hace falta
+configurar nada, el servidor usa una base embebida guardada en `server/.data/`
+(borrar esa carpeta la deja vacía).
+
+Los emails (código de verificación, recuperar la contraseña) en desarrollo no se
+envían: se muestran en la consola del servidor, con el código.
+
+Para probar el envío real desde tu compu, copiá `server/.env.example` a `server/.env`
+(está en `.gitignore`, nunca se sube) y completá `RESEND_API_KEY`. `npm run dev` la lee sola.
+
+En producción hacen falta tres variables de entorno (ver `server/.env.example`):
+`DATABASE_URL` (Postgres), `AUTH_SECRET` y `RESEND_API_KEY`. Si falta alguna, las
+cuentas quedan apagadas y el juego funciona igual. Los botones de Google y Discord
+aparecen solo si están sus credenciales (`GOOGLE_CLIENT_ID`/`SECRET`,
+`DISCORD_CLIENT_ID`/`SECRET`) y `PUBLIC_URL`. Las migraciones se aplican solas al
+arrancar.
+
+Si cambiás `server/src/db/schema.ts`, generá la migración y commiteala:
+
+```bash
+npm run db:generate -w server -- --name que_cambia
+```
+
+Detalles y decisiones en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md#21-cuentas-de-usuario).
+
 ## Publicarlo para jugar con gente
 
 Flagazo es **un solo proceso Node en un solo puerto**, así que entra en el plan gratis
@@ -434,6 +461,7 @@ nginx o Caddy adelante para el HTTPS.
 | `npm start` | Arranca el build de producción |
 | `npm test` | Tests (validaciones + integración real con Socket.IO) |
 | `npm run typecheck` | Chequeo de tipos de los tres paquetes |
+| `npm run db:generate -w server` | Genera la migración SQL tras cambiar el esquema de la base |
 | `npm run build:flag-refs` | Regenera las referencias de Draw Battle (ver abajo) |
 | `npx tsx scripts/calibrate-draw-scoring.ts` | Tabla de puntajes de Draw Battle sobre dibujos de prueba |
 

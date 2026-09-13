@@ -15,6 +15,9 @@ export function NicknameScreen() {
   const currentNickname = useAppStore((s) => s.session.nickname);
   const status = useAppStore((s) => s.connection.status);
   const goTo = useAppStore((s) => s.goTo);
+  const openAuth = useAppStore((s) => s.openAuth);
+  const accountsEnabled = useAppStore((s) => s.account.loaded && s.account.enabled);
+  const signedIn = useAppStore((s) => s.account.user !== null);
   const t = useT();
 
   const [value, setValue] = useState(() => currentNickname ?? storage.getNickname() ?? '');
@@ -96,6 +99,21 @@ export function NicknameScreen() {
           {!isConnected ? t.nickname.connecting : sending ? t.nickname.entering : t.nickname.play}
         </Button>
       </form>
+
+      {/* La cuenta es un extra: va debajo, y jugar como invitado sigue siendo lo primero. */}
+      {accountsEnabled && !signedIn && (
+        <div className="account-prompt">
+          <p className="account-prompt__text">{t.auth.prompt}</p>
+          <div className="account-prompt__actions">
+            <Button variant="ghost" onClick={() => openAuth('login')}>
+              {t.auth.signIn}
+            </Button>
+            <Button variant="cyan" onClick={() => openAuth('register')}>
+              {t.auth.createAccount}
+            </Button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

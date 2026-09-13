@@ -1,4 +1,5 @@
 import { RoomManager } from '../rooms/RoomManager';
+import type { FinishedMatch } from '../rooms/RoomManager';
 import type { Room } from '../rooms/Room';
 import type { GameServer, GameSocket } from '../types';
 import type { SessionStore } from './SessionStore';
@@ -42,8 +43,13 @@ export function joinChannel(io: GameServer, sessions: SessionStore, playerId: st
   }
 }
 
-export function createRoomManager(io: GameServer, sessions: SessionStore): RoomManager {
+export function createRoomManager(
+  io: GameServer,
+  sessions: SessionStore,
+  onGameFinished?: (match: FinishedMatch) => void,
+): RoomManager {
   return new RoomManager({
+    onGameFinished,
     onState(room) {
       io.to(roomChannel(room.code)).emit('room:state', room.toState());
     },

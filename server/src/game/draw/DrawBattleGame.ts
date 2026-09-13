@@ -21,7 +21,8 @@ import { createLogger } from '../../lib/log';
 import { pickFlags } from '../FlagGuessGame';
 import { flagFileUrl, flagTokenUrl } from '../flagUrls';
 import { createFlagToken, revokeFlagToken } from '../flagTokens';
-import type { Game, GameHooks, RosterEntry } from '../Game';
+import { placements } from '../Game';
+import type { Game, GameHooks, GameResult, RosterEntry } from '../Game';
 import { getReference, hasReference } from './references';
 import { scoreDrawing } from './score';
 
@@ -36,6 +37,8 @@ interface DrawPlayerState {
   totalScore: number;
   roundsPlayed: number;
   bestScore: number;
+  /** Rondas en las que llegó a juzgarse un dibujo suyo con algo adentro. */
+  drawings: number;
   /** Lo último que mandó en esta ronda, borrador o final. */
   drawing: Drawing | null;
   /** Mandó su dibujo final: no se acepta nada más de él en esta ronda. */
@@ -105,6 +108,7 @@ export class DrawBattleGame implements Game {
         roundsWon: 0,
         totalScore: 0,
         roundsPlayed: 0,
+        drawings: 0,
         bestScore: 0,
         drawing: null,
         locked: false,
@@ -266,6 +270,7 @@ export class DrawBattleGame implements Game {
       player.totalScore += item.shown;
       player.roundsPlayed++;
       player.bestScore = Math.max(player.bestScore, item.shown);
+      if (player.drawing && player.drawing.strokes.length > 0) player.drawings++;
 
       entries.push({
         playerId: player.playerId,
@@ -370,6 +375,36 @@ export class DrawBattleGame implements Game {
   rename(playerId: string, nickname: string) {
     const player = this.players.get(playerId);
     if (player) player.nickname = nickname;
+  }
+
+  // ── Resultado ─────────────────────────────────────────────
+
+  /**
+   * El resultado final, con el mismo orden que la tabla de la pantalla: puntos por
+   * puesto, después rondas ganadas, después la suma de los puntajes.
+   */
+  results(): GameResult {
+    const sorted = [...this.players.values()].sort(
+      (a, b) => b.points - a.points || b.roundsWon - a.roundsWon || b.totalScore - a.totalScore,
+    );
+    const ranks = placements(
+      sorted,
+      (a, b) => a.points === b.points && a.roundsWon === b.roundsWon && a.totalScore === b.totalScore,
+    );
+    const top = sorted[0]?.points ?? 0;
+
+    return {
+      kind: 'draw',
+      players: sorted.map((player, index) => ({
+        playerId: player.playerId,
+        placement: ranks[index]!,
+        won: top > 0 && player.points === top,
+        participated: player.drawings > 0,
+        roundsPlayed: player.roundsPlayed,
+        roundsWon: player.roundsWon,
+        draw: { totalScore: player.totalScore, bestScore: player.bestScore, drawings: player.drawings },
+      })),
+    };
   }
 
   // ── Snapshot ──────────────────────────────────────────────

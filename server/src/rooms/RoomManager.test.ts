@@ -47,7 +47,7 @@ describe('crear y unirse', () => {
     expect(code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{5}$/);
     expect(room.hostId).toBe('ana');
     expect(room.toState().players).toEqual([
-      { id: 'ana', nickname: 'ana', connected: true, waiting: false },
+      { id: 'ana', nickname: 'ana', registered: false, avatarUrl: null, connected: true, waiting: false },
     ]);
     expect(states).toEqual([code]);
   });
@@ -430,5 +430,67 @@ describe('parties públicas', () => {
       'secondsPerFlag',
       'totalRounds',
     ]);
+  });
+});
+
+describe('cuentas dentro de la party', () => {
+  const ana = { userId: 'u-ana', username: 'Ana', avatarUrl: '/api/avatars/u-ana.webp?v=2' };
+  const beto = { userId: 'u-beto', username: 'Beto', avatarUrl: null };
+
+  it('el snapshot dice quién juega con cuenta y su foto, y nada más de la cuenta', () => {
+    const created = rooms.create({ id: 'p1', nickname: 'Ana', account: ana });
+    if (!created.ok) throw new Error(created.error);
+    rooms.join(created.data.code, player('p2', 'invitado'));
+
+    const players = created.data.toState().players;
+    expect(players).toEqual([
+      expect.objectContaining({ id: 'p1', nickname: 'Ana', registered: true, avatarUrl: ana.avatarUrl }),
+      expect.objectContaining({ id: 'p2', nickname: 'invitado', registered: false, avatarUrl: null }),
+    ]);
+    expect(Object.keys(players[0]!).sort()).toEqual(['avatarUrl', 'connected', 'id', 'nickname', 'registered', 'waiting']);
+  });
+
+  it('la misma cuenta no puede estar dos veces en la sala', () => {
+    const created = rooms.create({ id: 'p1', nickname: 'Ana', account: ana });
+    if (!created.ok) throw new Error(created.error);
+    expect(rooms.join(created.data.code, { id: 'p2', nickname: 'Ana otra', account: ana })).toEqual({
+      ok: false,
+      error: 'ACCOUNT_IN_PARTY',
+    });
+    // Otra cuenta, o un invitado, entran sin problema.
+    expect(rooms.join(created.data.code, { id: 'p3', nickname: 'Beto', account: beto }).ok).toBe(true);
+    expect(rooms.join(created.data.code, player('p4', 'invitado')).ok).toBe(true);
+  });
+
+  it('iniciar o cerrar sesión adentro de la sala actualiza al jugador y avisa', () => {
+    const code = createParty('p1');
+    const before = states.length;
+
+    expect(rooms.setAccount('p1', beto)).toBe(true);
+    expect(rooms.getRoom(code)!.toState().players[0]).toMatchObject({ registered: true });
+    expect(states.length).toBe(before + 1);
+
+    // Sin cambios, no hay broadcast de más.
+    rooms.setAccount('p1', beto);
+    expect(states.length).toBe(before + 1);
+
+    rooms.setAccount('p1', null);
+    expect(rooms.getRoom(code)!.toState().players[0]).toMatchObject({ registered: false, avatarUrl: null });
+  });
+
+  it('no deja poner una cuenta que ya juega en la sala con otro jugador', () => {
+    const created = rooms.create({ id: 'p1', nickname: 'Ana', account: ana });
+    if (!created.ok) throw new Error(created.error);
+    rooms.join(created.data.code, player('p2', 'invitado'));
+    expect(rooms.setAccount('p2', ana)).toBe(false);
+    expect(created.data.toState().players[1]).toMatchObject({ registered: false });
+  });
+
+  it('la corona pasa igual entre invitados y registrados', () => {
+    const created = rooms.create({ id: 'p1', nickname: 'Ana', account: ana });
+    if (!created.ok) throw new Error(created.error);
+    rooms.join(created.data.code, player('p2', 'invitado'));
+    rooms.leave('p1');
+    expect(created.data.hostId).toBe('p2');
   });
 });

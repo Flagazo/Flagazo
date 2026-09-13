@@ -1,6 +1,7 @@
 import { useT } from '../i18n';
 import { leaveParty } from '../net/party';
 import { useAppStore } from '../store/useAppStore';
+import { AccountMenu } from './AccountMenu';
 import { ConnectionBadge } from './ConnectionBadge';
 import { LanguageSelector } from './LanguageSelector';
 import { MuteButton } from './MuteButton';
@@ -37,6 +38,7 @@ export function TopBar({ showLogo = true }: TopBarProps) {
         <LanguageSelector />
         <MuteButton />
         <ConnectionBadge />
+        <AccountMenu />
       </div>
     </header>
   );

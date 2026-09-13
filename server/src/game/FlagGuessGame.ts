@@ -23,7 +23,8 @@ import { poolFor } from '../data/countries';
 import { createLogger } from '../lib/log';
 import { flagFileUrl } from './flagUrls';
 import { createFlagToken } from './flagTokens';
-import type { Game, GameHooks, RosterEntry } from './Game';
+import { placements } from './Game';
+import type { Game, GameHooks, GameResult, RosterEntry } from './Game';
 import { getMode } from './modes';
 import type { GameMode } from './modes/types';
 
@@ -395,6 +396,43 @@ export class FlagGuessGame implements Game {
   rename(playerId: string, nickname: string) {
     const player = this.players.get(playerId);
     if (player) player.nickname = nickname;
+  }
+
+  // ── Resultado ─────────────────────────────────────────────
+
+  /**
+   * El resultado final. Gana quien más rondas ganó, igual que en la pantalla de
+   * resultados; a igualdad de rondas, el puesto lo ordenan los puntos.
+   */
+  results(): GameResult {
+    const sorted = [...this.players.values()].sort(
+      (a, b) => b.roundsWon - a.roundsWon || b.stats.totalPoints - a.stats.totalPoints,
+    );
+    const ranks = placements(sorted, (a, b) => a.roundsWon === b.roundsWon && a.stats.totalPoints === b.stats.totalPoints);
+    const top = sorted[0]?.roundsWon ?? 0;
+
+    return {
+      kind: 'guess',
+      players: sorted.map((player, index) => {
+        const answered = player.stats.correct + player.stats.wrong;
+        return {
+          playerId: player.playerId,
+          placement: ranks[index]!,
+          won: top > 0 && player.roundsWon === top,
+          participated: answered > 0,
+          roundsPlayed: this.settings.totalRounds,
+          roundsWon: player.roundsWon,
+          guess: {
+            points: player.stats.totalPoints,
+            correct: player.stats.correct,
+            wrong: player.stats.wrong,
+            missed: player.stats.missed,
+            bestStreak: player.stats.bestStreak,
+            correctMsTotal: player.correctMsTotal,
+          },
+        };
+      }),
+    };
   }
 
   // ── Snapshot ──────────────────────────────────────────────

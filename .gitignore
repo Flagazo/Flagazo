@@ -8,3 +8,6 @@ coverage/
 
 # Salida del grafo de graphify: se regenera con la herramienta, no es código.
 graphify-out/
+
+# Base embebida de desarrollo (PGlite). Cuentas de prueba locales.
+server/.data/

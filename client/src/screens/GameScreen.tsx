@@ -6,8 +6,8 @@ import { AdSlot } from '../components/AdSlot';
 import { Button } from '../components/Button';
 import { FlagImage } from '../components/FlagImage';
 import { WaitingPlayers } from '../components/WaitingPlayers';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import { useLocale, useT } from '../i18n';
-import { avatarColor, avatarInitial } from '../lib/avatar';
 import { errorMessage } from '../lib/errors';
 import { useProgress, useSecondsLeft } from '../lib/useServerClock';
 import { useReorder } from '../lib/useReorder';
@@ -127,12 +127,7 @@ function Standings({ game }: { game: GuessSnapshot }) {
               .join(' ')}
           >
             <span className="standings__position">{position + 1}</span>
-            <span
-              className="standings__avatar"
-              style={{ background: avatarColor(player.playerId) }}
-            >
-              {avatarInitial(player.nickname)}
-            </span>
+            <PlayerAvatar className="standings__avatar" playerId={player.playerId} nickname={player.nickname} />
 
             <span className="standings__name">
               {player.nickname}
@@ -689,9 +684,7 @@ function Ranking({
             className={`ranking__row ${player.playerId === myId ? 'ranking__row--me' : ''}`}
           >
             <span className="ranking__position">{position + 1}</span>
-            <span className="ranking__avatar" style={{ background: avatarColor(player.playerId) }}>
-              {avatarInitial(player.nickname)}
-            </span>
+            <PlayerAvatar className="ranking__avatar" playerId={player.playerId} nickname={player.nickname} />
             <span className="ranking__name">{player.nickname}</span>
             {/* Las rondas en amarillo y grandes: son las que definen la partida. */}
             <span className="ranking__score" title={t.game.roundsWon}>

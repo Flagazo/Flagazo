@@ -5,7 +5,8 @@
 # despliega en otra plataforma, este archivo se ignora solo.
 #
 # Flagazo es un solo proceso Node en un solo puerto: el mismo servidor sirve el
-# cliente compilado, las banderas y el WebSocket. No hay base de datos.
+# cliente compilado, las banderas y el WebSocket. Las parties viven en memoria;
+# solo las cuentas de usuario van a Postgres (fuera de Render, ver DATABASE_URL).
 
 services:
   - type: web
@@ -39,6 +40,46 @@ services:
       - key: VITE_ADS_SLOT_LOBBY
         sync: false
       - key: VITE_ADS_SLOT_RESULTS
+        sync: false
+
+      # Postgres de las cuentas (Neon). Es un secreto: lleva usuario y contraseña.
+      # Sin esta variable el juego funciona igual, con las cuentas apagadas. Las
+      # migraciones se aplican solas al arrancar. Se usa en runtime, no en el
+      # build: cargarla o cambiarla alcanza con reiniciar, no hace falta redeploy.
+      - key: DATABASE_URL
+        sync: false
+
+      # Secreto para firmar los códigos que llegan por email (32+ caracteres
+      # aleatorios). Render lo genera solo al crear el servicio desde este archivo;
+      # en un servicio ya creado hay que cargarlo a mano.
+      - key: AUTH_SECRET
+        generateValue: true
+
+      # Clave de la API de Resend (emails de verificación y de recuperar la
+      # contraseña). Sin ella las cuentas quedan apagadas: sin email nadie podría
+      # verificar la suya. Es por API y no por SMTP porque el plan gratis de Render
+      # bloquea los puertos de SMTP.
+      - key: RESEND_API_KEY
+        sync: false
+
+      # Dirección pública, sin barra final. Con ella se arma la URL a la que vuelven
+      # Google y Discord, que tiene que coincidir con la registrada en cada uno.
+      - key: PUBLIC_URL
+        value: https://flagazo.com
+
+      # Huso horario del ranking mensual (en qué mes cae cada partida). Vacío = UTC.
+      - key: LEADERBOARD_TIMEZONE
+        sync: false
+
+      # "Continuar con Google" y "Continuar con Discord". Cada botón aparece solo
+      # si están su id y su secreto.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
         sync: false
 
 # Sin autoescalado a propósito: las partidas viven en memoria del proceso. Con

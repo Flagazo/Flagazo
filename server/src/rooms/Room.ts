@@ -13,6 +13,15 @@ import type {
   RoomState,
 } from '@flagazo/shared';
 import type { ActiveGame } from '../game/Game';
+/**
+ * La cuenta con la que juega alguien. Es lo único de la cuenta que llega a las
+ * salas: nada de email, nada de sesión.
+ */
+export interface PlayerAccount {
+  userId: string;
+  username: string;
+  avatarUrl: string | null;
+}
 
 /** Un jugador dentro de una party (estado interno del servidor). */
 export interface RoomPlayer {
@@ -25,6 +34,12 @@ export interface RoomPlayer {
   joinedAt: number;
   /** Entró con la partida ya empezada: mira y juega la revancha (Fase 5). */
   waiting: boolean;
+  /**
+   * La cuenta con la que juega, o null si es invitado. Separada del jugador a
+   * propósito: el jugador es "esta conexión en esta sala"; la cuenta es la
+   * persona que la usa, y puede no haber ninguna.
+   */
+  account: PlayerAccount | null;
 }
 
 /**
@@ -43,10 +58,17 @@ export class Room {
   visibility: PartyVisibility = DEFAULT_VISIBILITY;
   /** Motor de la partida en curso, del juego que sea, o null si están en el lobby. */
   game: ActiveGame | null = null;
+  /**
+   * La partida en curso para las estadísticas: su id (que la hace idempotente al
+   * grabarla), cuándo empezó y con qué cuenta arrancó cada jugador. Las cuentas se
+   * fijan al empezar: iniciar o cerrar sesión a mitad de partida no cambia a quién
+   * se le cargan los resultados.
+   */
+  match: { id: string; startedAt: Date; accounts: Map<string, PlayerAccount | null> } | null = null;
 
   constructor(
     readonly code: string,
-    host: { id: string; nickname: string },
+    host: { id: string; nickname: string; account?: PlayerAccount | null },
     visibility: PartyVisibility = DEFAULT_VISIBILITY,
   ) {
     this.hostId = host.id;
@@ -54,7 +76,7 @@ export class Room {
     this.addPlayer(host);
   }
 
-  addPlayer(player: { id: string; nickname: string }): RoomPlayer {
+  addPlayer(player: { id: string; nickname: string; account?: PlayerAccount | null }): RoomPlayer {
     const entry: RoomPlayer = {
       id: player.id,
       nickname: player.nickname,
@@ -63,6 +85,7 @@ export class Room {
       joinedAt: Date.now(),
       // Si la partida ya arrancó, mira desde afuera hasta la próxima.
       waiting: this.phase !== 'lobby',
+      account: player.account ?? null,
     };
     this.players.set(entry.id, entry);
     return entry;
@@ -70,6 +93,14 @@ export class Room {
 
   isFull(): boolean {
     return this.players.size >= MAX_PLAYERS_PER_PARTY;
+  }
+
+  /** ¿Esa cuenta ya está jugando en esta sala, con otro jugador? */
+  hasAccount(userId: string, exceptId?: string): boolean {
+    for (const player of this.players.values()) {
+      if (player.id !== exceptId && player.account?.userId === userId) return true;
+    }
+    return false;
   }
 
   /** ¿Hay otro jugador con ese nombre? (ignora tildes y mayúsculas) */
@@ -117,6 +148,8 @@ export class Room {
       .map((player) => ({
         id: player.id,
         nickname: player.nickname,
+        registered: player.account !== null,
+        avatarUrl: player.account?.avatarUrl ?? null,
         connected: player.connected,
         waiting: player.waiting,
       }));

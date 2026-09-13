@@ -9,6 +9,58 @@ export interface RosterEntry {
   connected: boolean;
 }
 
+/**
+ * Cómo le fue a un jugador en una partida terminada, igual para todos los juegos.
+ *
+ * Lo calcula el motor, que es el único que vio cada respuesta y cada dibujo. Con
+ * esto se guardan las estadísticas y el ranking: nada sale del cliente.
+ */
+export interface PlayerResult {
+  playerId: string;
+  /** Puesto final, 1 = primero. Los empatados comparten puesto. */
+  placement: number;
+  /** Ganó la partida (con empate, ganan todos los que empataron arriba). */
+  won: boolean;
+  /** Respondió o dibujó algo. Quien solo miró no cuenta para el ranking. */
+  participated: boolean;
+  roundsPlayed: number;
+  roundsWon: number;
+  guess?: {
+    points: number;
+    correct: number;
+    wrong: number;
+    missed: number;
+    bestStreak: number;
+    /** Suma de los tiempos de las respuestas correctas, para promediar. */
+    correctMsTotal: number;
+  };
+  draw?: {
+    /** Suma de los puntajes (0–100) de cada ronda. */
+    totalScore: number;
+    bestScore: number;
+    /** Rondas en las que mandó un dibujo con algo. */
+    drawings: number;
+  };
+}
+
+export interface GameResult {
+  kind: GameKind;
+  players: PlayerResult[];
+}
+
+/**
+ * Puestos con empates compartidos (1, 1, 3…), a partir de una lista ya ordenada y
+ * de una función que dice si dos jugadores empatan.
+ */
+export function placements<T>(sorted: readonly T[], tied: (a: T, b: T) => boolean): number[] {
+  const result: number[] = [];
+  sorted.forEach((item, index) => {
+    const previous = sorted[index - 1];
+    result.push(previous !== undefined && tied(previous, item) ? result[index - 1]! : index + 1);
+  });
+  return result;
+}
+
 /** Cómo le avisa el motor al mundo exterior que hay que reenviar el snapshot. */
 export interface GameHooks {
   onChange(): void;
@@ -33,6 +85,8 @@ export interface Game {
   removePlayer(playerId: string): void;
   rename(playerId: string, nickname: string): void;
   toSnapshot(): GameSnapshot;
+  /** El resultado final. Solo tiene sentido con `isFinished`. */
+  results(): GameResult;
   /** Corta sus timers: la sala se cerró o volvió al lobby. */
   dispose(): void;
 }

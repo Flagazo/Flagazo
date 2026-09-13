@@ -65,8 +65,8 @@ export function initConnection() {
 
     if (session.nickname) {
       store().setSession({ nickname: session.nickname });
-      // Recarga de página con sesión viva (F5): directo al menú.
-      if (isFirstSession && store().screen === 'nickname') store().goTo('menu');
+      // Recarga de página con sesión viva (F5), o la cuenta ya trae nombre: directo al menú.
+      if ((isFirstSession || store().account.user) && store().screen === 'nickname') store().goTo('menu');
       return;
     }
 
@@ -181,5 +181,48 @@ export async function submitNickname(nickname: string): Promise<SubmitResult> {
     return { ok: true, nickname: response.data.nickname };
   } catch {
     return { ok: false, error: 'TIMEOUT' };
+  }
+}
+
+/**
+ * Reconecta el socket para que el servidor lea la cookie de sesión recién creada.
+ *
+ * La cuenta se asocia al jugador en el handshake, que es cuando el navegador manda
+ * las cookies: después de iniciar sesión hay que volver a pasar por ahí. El token
+ * de juego es el mismo, así que si estaba en una sala, sigue en ella.
+ */
+export function reconnectWithAccount(timeoutMs = 8000): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      // Un instante más: la sala en curso llega justo después de la sesión.
+      setTimeout(resolve, 300);
+    };
+    const timer = setTimeout(() => {
+      socket.off('session:ready', done);
+      resolve();
+    }, timeoutMs);
+    socket.once('session:ready', done);
+    socket.disconnect();
+    socket.connect();
+  });
+}
+
+/** El servidor vuelve a leer la cuenta (nombre, foto) y actualiza al jugador en la sala. */
+export async function refreshAccountOnServer() {
+  try {
+    const result = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck('session:refreshAccount', {});
+    if (result.ok && result.data.nickname) useAppStore.getState().setSession({ nickname: result.data.nickname });
+  } catch {
+    // Sin conexión: se aplica sola en la próxima reconexión.
+  }
+}
+
+/** Cerró sesión: el servidor deja de asociar la cuenta al jugador. */
+export async function signOutOnServer() {
+  try {
+    await socket.timeout(ACK_TIMEOUT_MS).emitWithAck('session:signOut', {});
+  } catch {
+    // Si no llega, la próxima conexión ya no trae la cookie y entra como invitado.
   }
 }

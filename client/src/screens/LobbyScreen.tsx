@@ -20,8 +20,8 @@ import { AdSlot } from '../components/AdSlot';
 import { Button } from '../components/Button';
 import { NumberField } from '../components/NumberField';
 import { OptionGroup } from '../components/OptionGroup';
+import { PlayerAvatar } from '../components/PlayerAvatar';
 import { useT } from '../i18n';
-import { avatarColor, avatarInitial } from '../lib/avatar';
 import { errorMessage } from '../lib/errors';
 import { storage } from '../lib/storage';
 import {
@@ -275,9 +275,7 @@ export function LobbyScreen() {
               key={player.id}
               className={`player-row ${player.connected ? '' : 'player-row--away'}`}
             >
-              <span className="player-row__avatar" style={{ background: avatarColor(player.id) }}>
-                {avatarInitial(player.nickname)}
-              </span>
+              <PlayerAvatar className="player-row__avatar" playerId={player.id} nickname={player.nickname} />
               <span className="player-row__name">
                 {player.nickname}
                 {player.id === myId && <span className="player-row__tag">{t.common.you}</span>}

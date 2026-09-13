@@ -1,0 +1,334 @@
+.auth-screen {
+  justify-content: flex-start;
+  padding-top: max(88px, 10vh);
+}
+
+.auth-card {
+  width: min(100%, 440px);
+  padding: 14px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: pop-in 420ms var(--ease-pop) both;
+}
+
+/* ── Pestañas ── */
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(var(--sunken-rgb), 0.7);
+}
+
+.auth-tabs__tab {
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.auth-tabs__tab:hover {
+  color: var(--text);
+}
+
+.auth-tabs__tab.is-active {
+  background: var(--yellow);
+  color: var(--text-on-warm);
+}
+
+.auth-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  padding-top: 4px;
+}
+
+.auth-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.auth-card__pitch {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+/* ── Campos ── */
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field__label {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.auth-field__box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-field__input {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-sm);
+  background: rgba(10, 5, 30, 0.55);
+  font-size: 1.05rem;
+  font-weight: 700;
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.auth-field__box:has(.auth-field__toggle) .auth-field__input {
+  padding-right: 52px;
+}
+
+.auth-field__input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 5px rgba(53, 214, 255, 0.16);
+}
+
+.auth-field--error .auth-field__input {
+  border-color: var(--red);
+  box-shadow: 0 0 0 5px rgba(255, 90, 95, 0.14);
+}
+
+.auth-field__toggle {
+  position: absolute;
+  right: 6px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.auth-field__toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-field__message {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.auth-field--error .auth-field__message {
+  color: var(--red);
+}
+
+/* ── Resto ── */
+
+.auth-remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-remember input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+
+.auth-card__error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 90, 95, 0.14);
+  border: 1px solid rgba(255, 90, 95, 0.4);
+  color: #ffb3b5;
+  font-weight: 800;
+  text-align: center;
+}
+
+.auth-card__guest {
+  align-self: center;
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  color: var(--text-soft);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.auth-card__guest:hover {
+  color: var(--text);
+}
+
+/* ── Pasos de código (verificar, recuperar) ── */
+
+.auth-card__badge {
+  font-size: 2.6rem;
+  line-height: 1;
+  animation: pop-in 460ms 120ms var(--ease-pop) both;
+}
+
+.auth-card__pitch strong {
+  color: var(--text);
+  word-break: break-all;
+}
+
+.auth-card__hint {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.auth-field__input.auth-field__input--code {
+  height: 68px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  /* El espaciado agrega aire después del último dígito: esto lo compensa para que quede centrado. */
+  text-indent: 0.35em;
+}
+
+.auth-field__input--code::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.auth-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+}
+
+.auth-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 14px;
+}
+
+.auth-card__link {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--cyan);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auth-card__link:hover:not(:disabled) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.auth-card__link:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.auth-card__info {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(46, 229, 157, 0.12);
+  border: 1px solid rgba(46, 229, 157, 0.4);
+  color: #a8f5d6;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* ── Google y Discord ── */
+
+.oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oauth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 50px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 90ms ease, box-shadow 90ms ease, filter 140ms ease;
+}
+
+.oauth-button:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.oauth-button:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.oauth-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+/* Colores de cada marca, como piden sus guías. */
+.oauth-button--google {
+  background: #ffffff;
+  color: #1f1f1f;
+}
+
+.oauth-button--discord {
+  background: #5865f2;
+  color: #ffffff;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--surface-border);
+}

@@ -1,10 +1,12 @@
 import { create } from 'zustand';
-import type { RoomState } from '@flagazo/shared';
+import type { AccountInfo, OAuthProvider, RoomState } from '@flagazo/shared';
 import { DEFAULT_LOCALE, isLocale } from '../i18n/types';
 import type { Locale } from '../i18n/types';
 import { storage } from '../lib/storage';
 
-export type Screen = 'nickname' | 'menu' | 'browse' | 'lobby' | 'game';
+export type Screen = 'nickname' | 'menu' | 'browse' | 'lobby' | 'game' | 'auth' | 'profile' | 'ranking';
+/** Paso dentro de la pantalla de cuenta. Los tres últimos llegan desde los dos primeros. */
+export type AuthMode = 'login' | 'register' | 'verify' | 'forgot' | 'reset';
 export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 export type ToastTone = 'info' | 'success' | 'error';
 
@@ -39,6 +41,26 @@ interface AppState {
    * caché vieja del navegador y traer las banderas de antes.
    */
   flagsVersion: string | null;
+  /**
+   * La cuenta. Es independiente de la sesión de juego: se puede jugar sin cuenta,
+   * y la cuenta existe aunque todavía no estés en ninguna sala.
+   */
+  account: {
+    /** false si el servidor corre sin base de datos: no se muestra nada de cuentas. */
+    enabled: boolean;
+    user: AccountInfo | null;
+    /** Google y Discord, si el servidor los tiene configurados. */
+    providers: OAuthProvider[];
+    /** Ya respondió el servidor. Antes de eso no se sabe qué botones mostrar. */
+    loaded: boolean;
+  };
+  /** Pestaña abierta en la pantalla de cuenta, y a dónde volver al salir. */
+  authMode: AuthMode;
+  authReturnTo: Screen;
+  /** El email con el que se está verificando o recuperando la cuenta, entre paso y paso. */
+  authEmail: string;
+  /** "Mantener sesión" elegido en el formulario, para aplicarlo cuando se entra de verdad. */
+  authRemember: boolean;
 
   goTo: (screen: Screen) => void;
   setConnection: (partial: Partial<AppState['connection']>) => void;
@@ -48,6 +70,8 @@ interface AppState {
   pushToast: (message: string, tone?: ToastTone) => void;
   dismissToast: (id: number) => void;
   setLocale: (locale: Locale) => void;
+  setAccount: (partial: Partial<AppState['account']>) => void;
+  openAuth: (mode: AuthMode, flow?: { email?: string; remember?: boolean }) => void;
 }
 
 let nextToastId = 1;
@@ -78,6 +102,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   toasts: [],
   locale: initialLocale(),
   flagsVersion: null,
+  account: { enabled: false, user: null, providers: [], loaded: false },
+  authMode: 'login',
+  authReturnTo: 'nickname',
+  authEmail: '',
+  authRemember: true,
 
   goTo: (screen) => set({ screen }),
   setConnection: (partial) => set({ connection: { ...get().connection, ...partial } }),
@@ -96,6 +125,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     storage.setLocale(locale);
     document.documentElement.lang = locale;
     set({ locale });
+  },
+
+  setAccount: (partial) => set({ account: { ...get().account, ...partial } }),
+  openAuth: (mode, flow = {}) => {
+    const { screen, authEmail, authRemember } = get();
+    set({
+      authMode: mode,
+      screen: 'auth',
+      authReturnTo: screen === 'auth' ? get().authReturnTo : screen,
+      authEmail: flow.email ?? authEmail,
+      authRemember: flow.remember ?? authRemember,
+    });
   },
 }));
 
