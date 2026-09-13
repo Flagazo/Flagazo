@@ -188,6 +188,36 @@ describe('cuenta y jugador', () => {
     expect(room.players).toEqual([expect.objectContaining({ nickname: 'Heredero', registered: false })]);
   });
 
+  it('borrar la cuenta: sigue en la sala con el mismo nombre, como invitado, y cada pestaña se entera', async () => {
+    const { user, cookie } = await account(2);
+    const host = await player({ cookie });
+    const created = await host.socket.emitWithAck('party:create', {});
+    if (!created.ok) throw new Error(created.error);
+    const otherTab = await player({ cookie });
+    const visitor = await guest('Testigo');
+    await visitor.socket.emitWithAck('party:join', { code: created.data.room.code });
+
+    const notices = [host, otherTab].map(
+      (tab) => new Promise<void>((resolve) => tab.socket.once('session:accountRemoved', () => resolve())),
+    );
+    const update = nextState(visitor.socket, (room) => room.players.some((p) => p.id === host.session.playerId && !p.registered));
+    const response = await fetch(`${url}/api/me/delete`, {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ confirm: user.username }),
+    });
+    expect(response.status).toBe(200);
+
+    await Promise.all(notices);
+    const room = await update;
+    expect(room.players.find((p) => p.id === host.session.playerId)).toMatchObject({
+      nickname: user.username,
+      registered: false,
+      avatarUrl: null,
+    });
+    expect(room.hostId).toBe(host.session.playerId);
+  });
+
   it('cerrar sesión adentro de la sala: sigue jugando con el mismo nombre, como invitado', async () => {
     const { user, cookie } = await account(1);
     const host = await player({ cookie });

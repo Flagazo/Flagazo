@@ -731,6 +731,7 @@ La API vive en `server/src/http/api.ts`, montada en `/api` antes que el frontend
 | `POST /api/me/avatar` | Cuerpo: la imagen (`image/jpeg`, `png` o `webp`, hasta 2 MB) |
 | `POST /api/me/avatar/provider` | `{ provider }` → usa la foto de Google o Discord |
 | `DELETE /api/me/avatar` | Vuelve al avatar de color |
+| `POST /api/me/delete` | `{ confirm, password? }` → borra la cuenta y todo lo suyo (cascada desde `users`); pide el username y, si tiene, la contraseña. Quien juegue con esa cuenta sigue en su sala como invitado |
 | `GET /api/avatars/<id>.webp` | La foto, pública y cacheable |
 | `GET /api/me/stats` | Estadísticas acumuladas de la cuenta |
 | `GET /api/leaderboard/monthly` | `?period=YYYY-MM|all&metric=points|wins|correct` → tabla, posición propia y meses con datos. Sin `period`, el mes actual. Público |

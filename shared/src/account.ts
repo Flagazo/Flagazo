@@ -61,6 +61,8 @@ export type AuthError =
   | 'AVATAR_TOO_LARGE'
   /** Se pidió usar la foto de Google o Discord, pero esa cuenta no tiene. */
   | 'NO_PROVIDER_AVATAR'
+  /** Para borrar la cuenta hay que escribir el username tal cual; no coincide. */
+  | 'CONFIRMATION_INVALID'
   | 'UNAUTHENTICATED'
   | 'RATE_LIMITED'
   | 'FORBIDDEN_ORIGIN'
@@ -177,6 +179,13 @@ export interface LoginRequest {
   password: string;
   remember: boolean;
   locale: EmailLocale;
+}
+
+export interface DeleteAccountRequest {
+  /** El username, escrito a mano: nadie borra su cuenta por un toque de más. */
+  confirm: string;
+  /** Solo si la cuenta tiene contraseña. */
+  password?: string;
 }
 
 export interface VerifyEmailRequest {

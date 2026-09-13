@@ -212,6 +212,8 @@ export interface ServerToClientEvents {
   'session:ready': (session: SessionInfo) => void;
   /** Jugadores conectados al servidor (prueba simple de broadcast en tiempo real). */
   'server:presence': (presence: { online: number }) => void;
+  /** La cuenta con la que jugaba esta pestaña se borró (desde esta u otra): sigue como invitado. */
+  'session:accountRemoved': () => void;
 
   /** Snapshot completo de la party. Se manda ante cualquier cambio y al reconectar. */
   'room:state': (room: RoomState) => void;

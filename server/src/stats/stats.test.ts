@@ -236,6 +236,22 @@ describe('grabar estadísticas', () => {
     expect(await entry(caro.user.id, '2026-09')).toBe(700);
   });
 
+  it('si alguien borró su cuenta a mitad de partida, los demás igual suman', async () => {
+    const eli = await account('Eli');
+    const gone = await account('Ido');
+    await database.db.delete(users).where(eq(users.id, gone.user.id));
+
+    const outcome = await recorder.record(
+      match([
+        { ...guessResult('p1', { points: 650 }), account: eli.account },
+        { ...guessResult('p2', { won: false, placement: 2 }), account: gone.account },
+      ]),
+    );
+    expect(outcome).toBe('recorded');
+    expect(await entry(eli.user.id, '2026-09')).toBe(650);
+    expect(await database.db.select().from(matchPlayers).where(eq(matchPlayers.userId, gone.user.id))).toEqual([]);
+  });
+
   it('jugando solo, suma al perfil pero no al ranking', async () => {
     const solo = await account('Solo');
     await recorder.record(match([{ ...guessResult('p1', { points: 9000 }), account: solo.account }]));

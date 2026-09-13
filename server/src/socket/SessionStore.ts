@@ -67,6 +67,11 @@ export class SessionStore {
     session.lastSeenAt = Date.now();
   }
 
+  /** Todas las sesiones vivas. */
+  all(): IterableIterator<Session> {
+    return this.sessions.values();
+  }
+
   /** Personas conectadas ahora mismo (sesiones con al menos un socket). */
   countOnline(): number {
     let online = 0;

@@ -1,8 +1,8 @@
-import { sql } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import { ALL_TIME_PERIOD, RANKING } from '@flagazo/shared';
 import type { GameKind, LeaderboardMetric } from '@flagazo/shared';
 import type { Database } from '../db/client';
-import { leaderboardEntries, matchPlayers, matches, userStats } from '../db/schema';
+import { leaderboardEntries, matchPlayers, matches, userStats, users } from '../db/schema';
 import type { PlayerResult } from '../game/Game';
 import type { FinishedMatch } from '../rooms/RoomManager';
 
@@ -27,18 +27,29 @@ export class StatsRecorder {
   async record(match: FinishedMatch): Promise<RecordOutcome> {
     // Una cuenta aparece una sola vez: la sala ya lo impide, esto es por las dudas.
     const seen = new Set<string>();
-    const registered = match.players.filter((player) => {
+    const withAccount = match.players.filter((player) => {
       if (!player.account || seen.has(player.account.userId)) return false;
       seen.add(player.account.userId);
       return true;
     });
-    if (registered.length === 0) return 'no-accounts';
+    if (withAccount.length === 0) return 'no-accounts';
 
     const participants = match.players.filter((player) => player.participated).length;
     const ranked = participants >= RANKING.minParticipants;
     const period = monthOf(match.endedAt, this.timeZone);
 
     return this.db.transaction(async (tx) => {
+      /*
+       * Quien borró su cuenta a mitad de partida ya no tiene dónde sumar: se lo deja
+       * afuera en vez de que la transacción entera falle y los demás pierdan la
+       * partida. FOR SHARE hace que un borrado que llegue ahora espere a que termine.
+       */
+      const ids = withAccount.map((player) => player.account!.userId);
+      const alive = new Set(
+        (await tx.select({ id: users.id }).from(users).where(inArray(users.id, ids)).for('share')).map((row) => row.id),
+      );
+      const registered = withAccount.filter((player) => alive.has(player.account!.userId));
+
       const inserted = await tx
         .insert(matches)
         .values({

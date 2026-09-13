@@ -1,9 +1,10 @@
 import { AVATAR } from '@flagazo/shared';
-import type { AccountInfo, OAuthProvider } from '@flagazo/shared';
+import type { AccountInfo, DeleteAccountRequest, OAuthProvider } from '@flagazo/shared';
+import { t } from '../i18n';
 import { useAppStore } from '../store/useAppStore';
 import { apiRequest } from './api';
 import type { ClientApiResult } from './api';
-import { refreshAccountOnServer } from './connection';
+import { refreshAccountOnServer, signOutOnServer } from './connection';
 
 type AccountResult = ClientApiResult<{ account: AccountInfo }>;
 
@@ -21,6 +22,23 @@ function keep(result: AccountResult): AccountResult {
 
 export async function changeUsername(username: string): Promise<AccountResult> {
   return keep(await apiRequest<{ account: AccountInfo }>('/me', { username }, { method: 'PATCH' }));
+}
+
+/**
+ * Borra la cuenta para siempre. Si sale bien, se sigue jugando como invitado con
+ * el mismo nombre: el servidor ya sacó la cuenta de la sala, y esto lo repite por
+ * si el aviso se perdió.
+ */
+export async function deleteAccount(request: DeleteAccountRequest): Promise<ClientApiResult<null>> {
+  const result = await apiRequest<null>('/me/delete', request);
+  if (result.ok) {
+    const store = useAppStore.getState();
+    store.setAccount({ user: null });
+    await signOutOnServer();
+    store.pushToast(t().profile.deleted, 'info');
+    store.goTo(store.room ? (store.room.game ? 'game' : 'lobby') : 'menu');
+  }
+  return result;
 }
 
 /** Errores que se detectan antes de subir: el servidor igual vuelve a validar todo. */

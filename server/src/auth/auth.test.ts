@@ -11,7 +11,7 @@ import type { AccountInfo, ApiResult, MeResponse, RegisterResponse } from '@flag
 import { createGameServer } from '../app';
 import { openMemoryDatabase } from '../db/client';
 import type { DatabaseHandle } from '../db/client';
-import { authCodes, authSessions, users } from '../db/schema';
+import { authCodes, authIdentities, authSessions, leaderboardEntries, userStats, users } from '../db/schema';
 import { MemoryMailer } from '../email/mailer';
 import { AccountService, UNVERIFIED_ACCOUNT_TTL_MS } from './accounts';
 import { SESSION_LIFETIME, SessionService } from './sessions';
@@ -35,6 +35,7 @@ beforeAll(async () => {
       emailPerIp: [1000, 60_000],
       oauthPerIp: [1000, 60_000],
       avatarPerUser: [1000, 60_000],
+      deletePerUser: [4, 60_000],
     },
   });
   await new Promise<void>((resolve) => server.httpServer.listen(0, resolve));
@@ -570,6 +571,91 @@ describe('sesión', () => {
     expect(await sessions.sweep()).toBeGreaterThanOrEqual(1);
     expect(await sessions.resolve(old.token)).toBeNull();
     expect(await sessions.resolve(current.token)).not.toBeNull();
+  });
+});
+
+describe('borrar la cuenta', () => {
+  it('con el username y la contraseña borra la cuenta y todo lo suyo, y cierra todas las sesiones', async () => {
+    const { data, account, cookie } = await registered(true);
+    // Otra sesión abierta de la misma cuenta, en otro dispositivo.
+    const other = cookieFrom((await api('/auth/login', { body: { email: data.email, password: data.password, remember: true } })).setCookie);
+    await database.db.insert(authIdentities).values({ userId: account.id, provider: 'google', providerUserId: `g-borrar-${counter}` });
+    await database.db.insert(userStats).values({ userId: account.id, gamesPlayed: 3 });
+    await database.db.insert(leaderboardEntries).values({ period: '2026-09', metric: 'points', userId: account.id, value: 900 });
+
+    const removed = await api('/me/delete', { body: { confirm: data.username, password: data.password }, cookie });
+    expect(removed.status).toBe(200);
+    expect(removed.body).toEqual({ ok: true, data: null });
+    expect(removed.setCookie.find((value) => value.startsWith('flagazo_sid='))).toMatch(/Expires=Thu, 01 Jan 1970/);
+
+    for (const session of [cookie, other]) {
+      expect((await api<MeResponse>('/me', { cookie: session })).body).toMatchObject({ ok: true, data: { account: null } });
+    }
+    const where = eq(users.id, account.id);
+    expect(await database.db.select().from(users).where(where)).toEqual([]);
+    expect(await database.db.select().from(authSessions).where(eq(authSessions.userId, account.id))).toEqual([]);
+    expect(await database.db.select().from(authIdentities).where(eq(authIdentities.userId, account.id))).toEqual([]);
+    expect(await database.db.select().from(userStats).where(eq(userStats.userId, account.id))).toEqual([]);
+    expect(await database.db.select().from(leaderboardEntries).where(eq(leaderboardEntries.userId, account.id))).toEqual([]);
+
+    // La contraseña ya no entra, y el nombre y el email quedan libres.
+    expect((await api('/auth/login', { body: { email: data.email, password: data.password } })).status).toBe(401);
+    const again = await register(data);
+    expect(again.status).toBe(202);
+    expect((await verify(data.email, lastCode(data.email))).body).toMatchObject({ ok: true, data: { account: { username: data.username } } });
+  });
+
+  it('pide el username exacto (sin importar mayúsculas ni tildes) y la contraseña correcta', async () => {
+    const { data, cookie } = await registered();
+
+    const wrongName = await api('/me/delete', { body: { confirm: 'otro nombre', password: data.password }, cookie });
+    expect(wrongName.status).toBe(400);
+    expect(wrongName.body).toEqual({ ok: false, error: 'CONFIRMATION_INVALID', field: 'username' });
+
+    const wrongPassword = await api('/me/delete', { body: { confirm: data.username, password: 'no-es-esta-99' }, cookie });
+    expect(wrongPassword.status).toBe(401);
+    expect(wrongPassword.body).toEqual({ ok: false, error: 'INVALID_CREDENTIALS', field: 'password' });
+
+    const noPassword = await api('/me/delete', { body: { confirm: data.username }, cookie });
+    expect(noPassword.body).toMatchObject({ ok: false, error: 'INVALID_CREDENTIALS' });
+
+    // Nada de eso tocó la cuenta.
+    expect((await api<MeResponse>('/me', { cookie })).body).toMatchObject({ ok: true, data: { account: { username: data.username } } });
+
+    const upperCase = await api('/me/delete', { body: { confirm: data.username.toUpperCase(), password: data.password }, cookie });
+    expect(upperCase.status).toBe(200);
+  });
+
+  it('corta los intentos repetidos: no sirve para adivinar la contraseña', async () => {
+    const { data, cookie } = await registered();
+    for (let i = 0; i < 4; i++) {
+      await api('/me/delete', { body: { confirm: data.username, password: `intento-${i}-xyz` }, cookie });
+    }
+    const blocked = await api('/me/delete', { body: { confirm: data.username, password: data.password }, cookie });
+    expect(blocked.status).toBe(429);
+    expect((await api<MeResponse>('/me', { cookie })).body).toMatchObject({ ok: true, data: { account: { username: data.username } } });
+  });
+
+  it('una cuenta solo de Google o Discord no tiene contraseña: alcanza con el username', async () => {
+    counter++;
+    const username = `SinClave${counter}`;
+    const [user] = await database.db
+      .insert(users)
+      .values({ username, usernameKey: username.toLowerCase(), email: `sinclave${counter}@gmail.com`, emailKey: `sinclave${counter}@gmail.com`, emailVerifiedAt: new Date() })
+      .returning();
+    const { token } = await new SessionService(database.db).create(user!.id, true);
+
+    const removed = await api('/me/delete', { body: { confirm: username }, cookie: `flagazo_sid=${token}` });
+    expect(removed.status).toBe(200);
+    expect(await database.db.select().from(users).where(eq(users.id, user!.id))).toEqual([]);
+  });
+
+  it('sin sesión, o desde otro sitio, no borra nada', async () => {
+    const { data, cookie } = await registered();
+    const body = { confirm: data.username, password: data.password };
+    expect((await api('/me/delete', { body })).status).toBe(401);
+    expect((await api('/me/delete', { body, cookie, headers: { 'sec-fetch-site': 'cross-site' } })).status).toBe(403);
+    expect((await api<MeResponse>('/me', { cookie })).body).toMatchObject({ ok: true, data: { account: { username: data.username } } });
   });
 });
 

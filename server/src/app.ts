@@ -48,7 +48,11 @@ export function createGameServer(options: GameServerOptions = {}) {
   });
 
   // Cuentas. Antes que el frontend, para que /api nunca caiga en el index.html.
-  const api = createApiRouter(options.accounts ?? null, options.apiLimits, options.oauth, options.profile);
+  // Las salas se arman más abajo: la API avisa a través de esto cuando ya existen.
+  let forgetAccount: (userId: string) => void = () => {};
+  const api = createApiRouter(options.accounts ?? null, options.apiLimits, options.oauth, options.profile, {
+    onAccountDeleted: (userId) => forgetAccount(userId),
+  });
   app.use('/api', api.router);
 
   /**
@@ -116,7 +120,8 @@ export function createGameServer(options: GameServerOptions = {}) {
       log.error('No se pudieron grabar las estadísticas de la partida', error instanceof Error ? error.message : error);
     });
   } : undefined);
-  registerSocketHandlers(io, sessions, rooms, options.accounts ? createAccountResolver(options.accounts.db) : null);
+  const socketHandlers = registerSocketHandlers(io, sessions, rooms, options.accounts ? createAccountResolver(options.accounts.db) : null);
+  forgetAccount = socketHandlers.forgetAccount;
 
   const sweepTimer = setInterval(() => {
     sessions.sweep();

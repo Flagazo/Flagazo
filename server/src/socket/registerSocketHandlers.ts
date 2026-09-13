@@ -88,6 +88,20 @@ export function registerSocketHandlers(
       broadcastPresence();
     });
   });
+
+  return {
+    /**
+     * Se borró una cuenta: cada pestaña que jugaba con ella sigue con el mismo
+     * nombre, como invitada, y se entera para dejar de mostrar la cuenta.
+     */
+    forgetAccount(userId: string) {
+      for (const session of sessions.all()) {
+        if (session.account?.userId !== userId) continue;
+        bindAccount(session, null, rooms);
+        for (const socketId of session.socketIds) io.to(socketId).emit('session:accountRemoved');
+      }
+    },
+  };
 }
 
 /**

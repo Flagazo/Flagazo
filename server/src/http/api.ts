@@ -60,6 +60,8 @@ export interface ApiLimits {
   oauthPerIp: [limit: number, windowMs: number];
   /** Cambiar la foto de perfil. Procesar imágenes cuesta CPU. */
   avatarPerUser: [limit: number, windowMs: number];
+  /** Intentos de borrar la cuenta: piden la contraseña, así que no pueden servir para adivinarla. */
+  deletePerUser: [limit: number, windowMs: number];
 }
 
 /** Google y Discord. Van aparte de las cuentas: se pueden tener cuentas sin ninguno configurado. */
@@ -73,6 +75,12 @@ export interface OAuthOptions {
   publicUrl: string | null;
 }
 
+/** Avisos de la API al resto del servidor. */
+export interface ApiHooks {
+  /** Se borró una cuenta: quien juegue con ella en una sala sigue como invitado. */
+  onAccountDeleted?: (userId: string) => void;
+}
+
 export const DEFAULT_API_LIMITS: ApiLimits = {
   registerPerIp: [10, 60 * MINUTE],
   loginPerIp: [30, 15 * MINUTE],
@@ -81,6 +89,7 @@ export const DEFAULT_API_LIMITS: ApiLimits = {
   emailPerIp: [10, 15 * MINUTE],
   oauthPerIp: [30, 15 * MINUTE],
   avatarPerUser: [20, 60 * MINUTE],
+  deletePerUser: [5, 15 * MINUTE],
 };
 
 const STATUS: Record<AuthError, number> = {
@@ -99,6 +108,7 @@ const STATUS: Record<AuthError, number> = {
   AVATAR_INVALID: 400,
   AVATAR_TOO_LARGE: 413,
   NO_PROVIDER_AVATAR: 404,
+  CONFIRMATION_INVALID: 400,
   UNAUTHENTICATED: 401,
   RATE_LIMITED: 429,
   FORBIDDEN_ORIGIN: 403,
@@ -167,6 +177,7 @@ export function createApiRouter(
   limits: ApiLimits = DEFAULT_API_LIMITS,
   oauth: OAuthOptions = { providers: [], publicUrl: null },
   profileOptions: ProfileOptions = {},
+  hooks: ApiHooks = {},
 ) {
   const router = express.Router();
   const limiters = {
@@ -177,6 +188,7 @@ export function createApiRouter(
     emailPerIp: new RateLimiter(...limits.emailPerIp),
     oauthPerIp: new RateLimiter(...limits.oauthPerIp),
     avatarPerUser: new RateLimiter(...limits.avatarPerUser),
+    deletePerUser: new RateLimiter(...limits.deletePerUser),
   };
 
   router.use((_req, res, next) => {
@@ -302,6 +314,21 @@ export function createApiRouter(
     const result = await profiles!.useProviderAvatar(session.user.id, req.body.provider);
     if (!result.ok) return sendError(res, result);
     sendOk<{ account: AccountInfo }>(res, { account: await info(result.value) });
+  });
+
+  router.post('/me/delete', async (req, res) => {
+    const session = await requireSession(req, res);
+    if (!session) return;
+    if (!isJsonObject(req.body)) return sendError(res, { error: 'BAD_REQUEST' });
+    if (limited(res, limiters.deletePerUser.hit(`user:${session.user.id}`))) return;
+
+    const result = await accounts!.deleteAccount(session.user, req.body);
+    if (!result.ok) return sendError(res, result);
+
+    clearSessionCookie(req, res);
+    hooks.onAccountDeleted?.(session.user.id);
+    log.info('Cuenta borrada a pedido de su dueño');
+    sendOk(res, null);
   });
 
   router.delete('/me/avatar', async (req, res) => {

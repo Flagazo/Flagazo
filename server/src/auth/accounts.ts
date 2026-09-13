@@ -228,6 +228,31 @@ export class AccountService {
     return { ok: true, value: updated! };
   }
 
+  // ── Borrar la cuenta ──────────────────────────────────────
+
+  /**
+   * Borra la cuenta y todo lo suyo: sesiones, códigos, Google y Discord, foto,
+   * estadísticas y lugar en el ranking (todo cuelga de `users` con `on delete
+   * cascade`). Las partidas quedan, sin la fila de este jugador: eran de todos.
+   *
+   * Tener la sesión no alcanza. Hay que escribir el username, para que no pase por
+   * un toque de más, y si la cuenta tiene contraseña, también la contraseña: una
+   * sesión olvidada abierta en otra computadora no sirve para borrarle la cuenta a
+   * nadie. Las cuentas solo de Google o Discord no tienen contraseña que pedir.
+   */
+  async deleteAccount(user: UserRow, input: { confirm?: unknown; password?: unknown }): Promise<AccountResult<null>> {
+    const confirm = typeof input.confirm === 'string' ? input.confirm : '';
+    if (nicknameKey(confirm) !== user.usernameKey) return fail({ error: 'CONFIRMATION_INVALID', field: 'username' });
+
+    if (user.passwordHash) {
+      const password = typeof input.password === 'string' && input.password.length <= 1024 ? input.password : '';
+      if (!(await verifyPassword(user.passwordHash, password))) return fail({ error: 'INVALID_CREDENTIALS', field: 'password' });
+    }
+
+    await this.db.delete(users).where(eq(users.id, user.id));
+    return { ok: true, value: null };
+  }
+
   // ── Mantenimiento ─────────────────────────────────────────
 
   /**

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { AVATAR, USERNAME_MAX_LENGTH, validateUsername } from '@flagazo/shared';
-import type { OAuthProvider, UserStatsSummary } from '@flagazo/shared';
+import { AVATAR, USERNAME_MAX_LENGTH, nicknameKey, validateUsername } from '@flagazo/shared';
+import type { AccountInfo, OAuthProvider, UserStatsSummary } from '@flagazo/shared';
 import { AccountAvatar } from '../components/AccountAvatar';
 import { Button } from '../components/Button';
 import { useLocale, useT } from '../i18n';
 import { errorMessage } from '../lib/errors';
 import { logout, startOAuth } from '../net/account';
 import { fetchMyStats } from '../net/leaderboard';
-import { applyProviderAvatar, changeUsername, removeAvatar, uploadAvatar } from '../net/profile';
+import { applyProviderAvatar, changeUsername, deleteAccount, removeAvatar, uploadAvatar } from '../net/profile';
 import { useAppStore } from '../store/useAppStore';
 import { describeFailure } from './auth/parts';
 import './ProfileScreen.css';
@@ -237,6 +237,8 @@ export function ProfileScreen() {
           {stats?.gamesPlayed === 0 && <p className="profile-hint">{t.profile.statsEmpty}</p>}
         </div>
 
+        <DeleteAccountSection user={user} />
+
         <div className="profile-footer">
           <Button onClick={() => goTo('menu')}>{t.profile.back}</Button>
           <Button variant="ghost" onClick={() => void logout().then((result) => result.ok && goTo('menu'))}>
@@ -245,6 +247,96 @@ export function ProfileScreen() {
         </div>
       </section>
     </main>
+  );
+}
+
+/**
+ * Borrar la cuenta. Cerrado, es un link discreto; abierto, pide escribir el
+ * username y, si la cuenta tiene, la contraseña. El servidor vuelve a validar las dos.
+ */
+function DeleteAccountSection({ user }: { user: AccountInfo }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const matches = nicknameKey(confirm) === nicknameKey(user.username);
+  const ready = matches && (!user.hasPassword || password.length > 0);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!ready || busy) return;
+    setBusy(true);
+    const result = await deleteAccount({ confirm, ...(user.hasPassword ? { password } : {}) });
+    setBusy(false);
+    if (result.ok) return;
+    const errors = t.profile.errors;
+    if (result.error === 'CONFIRMATION_INVALID') setError(errors.CONFIRMATION_INVALID);
+    else if (result.error === 'INVALID_CREDENTIALS') setError(errors.WRONG_PASSWORD);
+    else setError(describeFailure(result, t).message);
+  }
+
+  function close() {
+    setOpen(false);
+    setConfirm('');
+    setPassword('');
+    setError(null);
+  }
+
+  return (
+    <div className="profile-section profile-danger">
+      <h2>{t.profile.deleteTitle}</h2>
+      <p className="profile-hint">{t.profile.deleteText}</p>
+      {open ? (
+        <form className="profile-danger__form" onSubmit={submit} noValidate>
+          <label className="profile-danger__label">
+            {t.profile.deleteConfirm(user.username)}
+            <input
+              className={`profile-name-form__input ${error && !matches ? 'is-error' : ''}`}
+              value={confirm}
+              onChange={(event) => {
+                setConfirm(event.target.value);
+                setError(null);
+              }}
+              placeholder={user.username}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+            />
+          </label>
+          {user.hasPassword && (
+            <label className="profile-danger__label">
+              {t.profile.deletePassword}
+              <input
+                className="profile-name-form__input"
+                type="password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError(null);
+                }}
+                autoComplete="current-password"
+              />
+            </label>
+          )}
+          {error && <p className="profile-name-form__error" role="alert">{error}</p>}
+          <div className="profile-name-form__actions">
+            <Button type="submit" variant="pink" disabled={!ready || busy}>
+              {busy ? t.auth.sending : t.profile.deleteSubmit}
+            </Button>
+            <Button variant="ghost" onClick={close} disabled={busy}>
+              {t.profile.cancel}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <button type="button" className="profile-link profile-danger__open" onClick={() => setOpen(true)}>
+          {t.profile.deleteOpen}
+        </button>
+      )}
+    </div>
   );
 }
 

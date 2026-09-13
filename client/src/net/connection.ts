@@ -77,6 +77,11 @@ export function initConnection() {
     }
   });
 
+  // La cuenta se borró, desde esta pestaña o desde otra: se sigue como invitado.
+  socket.on('session:accountRemoved', () => {
+    if (store().account.user) store().setAccount({ user: null });
+  });
+
   socket.on('server:presence', ({ online }) => {
     store().setConnection({ online });
   });

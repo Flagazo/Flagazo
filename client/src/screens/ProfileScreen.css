@@ -241,3 +241,33 @@
   padding-top: 18px;
   border-top: 1px solid var(--surface-border);
 }
+
+/* ── Borrar la cuenta ── */
+
+.profile-danger__open {
+  align-self: flex-start;
+  color: var(--red);
+}
+
+.profile-danger__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid rgba(255, 90, 95, 0.45);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 90, 95, 0.08);
+}
+
+.profile-danger__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.profile-danger__form .profile-name-form__input {
+  text-align: left;
+  font-size: 1.05rem;
+}
