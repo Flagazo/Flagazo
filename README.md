@@ -1,5 +1,9 @@
 # 🏁 Flagazo
 
+**▶ Jugá gratis en [flagazo.com](https://flagazo.com)** · sin crear cuenta · hasta 30 jugadores por sala
+
+**▶ Play for free at [flagazo.com](https://flagazo.com)** · no account needed · up to 30 players per room
+
 Party game multijugador en tiempo real con dos juegos:
 
 - **🎯 Flag Guess** — todos ven la misma bandera y gana el que la reconoce primero.

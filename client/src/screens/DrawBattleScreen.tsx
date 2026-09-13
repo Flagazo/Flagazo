@@ -19,6 +19,7 @@ import type { Brush, DrawCanvasHandle } from '../components/draw/DrawCanvas';
 import { DrawToolbar } from '../components/draw/DrawToolbar';
 import { DrawingView } from '../components/draw/DrawingView';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { ShareResult } from '../components/ShareResult';
 import { useLocale, useT } from '../i18n';
 import { errorMessage } from '../lib/errors';
 import { storage } from '../lib/storage';
@@ -578,6 +579,8 @@ function DrawResults({ game }: { game: DrawSnapshot }) {
   const ranking = [...game.players].sort(byStanding);
   const top = ranking[0]?.points ?? 0;
   const winners = ranking.filter((player) => player.points === top && top > 0);
+  const myIndex = ranking.findIndex((player) => player.playerId === myId);
+  const me = ranking[myIndex];
   const best = ranking.reduce<DrawPlayer | null>((acc, p) => (!acc || p.bestScore > acc.bestScore ? p : acc), null);
   const average = (player: DrawPlayer) =>
     player.roundsPlayed === 0 ? 0 : Math.round(player.totalScore / player.roundsPlayed);
@@ -645,6 +648,7 @@ function DrawResults({ game }: { game: DrawSnapshot }) {
         <Button variant="ghost" onClick={() => void leaveParty()} disabled={busy}>
           {t.common.leave}
         </Button>
+        <ShareResult facts={{ game: 'draw', position: me ? myIndex + 1 : null, players: ranking.length, points: me?.points ?? 0 }} />
         {isHost ? (
           <Button variant="green" size="lg" icon="↻" onClick={() => void handleRematch()} disabled={busy}>
             {t.game.rematch}

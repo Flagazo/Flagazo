@@ -30,6 +30,18 @@ export const es: Dictionary = {
     waitingForHost: 'Esperando al anfitrión…',
   },
 
+  share: {
+    button: 'Compartir',
+    place: (position) => `${position}.º`,
+    guess: (place, players, points, correct) =>
+      `Quedé ${place} de ${players} en Flagazo con ${points} puntos y ${correct} banderas acertadas. ¿Te animas a superarme?`,
+    draw: (place, players, points) =>
+      `Quedé ${place} de ${players} dibujando banderas de memoria en Flagazo (${points} pts). ¿Te animas a superarme?`,
+    invite: 'Adivina las banderas del mundo con amigos, gratis y sin crear cuenta. ¡Hasta 30 jugadores!',
+    copied: '¡Copiado! Pégalo donde quieras.',
+    failed: 'No se pudo compartir. Prueba de nuevo.',
+  },
+
   topbar: {
     home: 'Volver al menú principal',
     language: 'Idioma',

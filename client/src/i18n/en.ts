@@ -30,6 +30,22 @@ export const en = {
     waitingForHost: 'Waiting for the host…',
   },
 
+  share: {
+    button: 'Share',
+    place: (position: number) => {
+      const tens = position % 100;
+      const suffix = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[position % 10] ?? 'th';
+      return `${position}${suffix}`;
+    },
+    guess: (place: string, players: number, points: string, correct: number) =>
+      `I finished ${place} of ${players} in Flagazo with ${points} points and ${correct} flags right. Think you can beat me?`,
+    draw: (place: string, players: number, points: string) =>
+      `I finished ${place} of ${players} drawing flags from memory in Flagazo (${points} pts). Think you can beat me?`,
+    invite: 'Guess the flags of the world with friends, free and with no account needed. Up to 30 players!',
+    copied: 'Copied! Paste it wherever you want.',
+    failed: 'Could not share. Try again.',
+  },
+
   topbar: {
     /** El logo lleva al menú: la etiqueta dice a dónde, no qué es. */
     home: 'Back to the main menu',

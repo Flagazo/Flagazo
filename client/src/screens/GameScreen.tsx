@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { FlagImage } from '../components/FlagImage';
 import { WaitingPlayers } from '../components/WaitingPlayers';
 import { PlayerAvatar } from '../components/PlayerAvatar';
+import { ShareResult } from '../components/ShareResult';
 import { useLocale, useT } from '../i18n';
 import { errorMessage } from '../lib/errors';
 import { useProgress, useSecondsLeft } from '../lib/useServerClock';
@@ -452,6 +453,9 @@ function Results({ game }: { game: GuessSnapshot }) {
   const ranking = [...game.players].sort((a, b) => b.roundsWon - a.roundsWon);
   const top = ranking[0]?.roundsWon ?? 0;
   const winners = ranking.filter((player) => player.roundsWon === top && top > 0);
+  const myId = useAppStore((s) => s.session.playerId);
+  const myIndex = ranking.findIndex((player) => player.playerId === myId);
+  const me = ranking[myIndex];
 
   async function handleRematch() {
     setBusy(true);
@@ -491,6 +495,15 @@ function Results({ game }: { game: GuessSnapshot }) {
         <Button variant="ghost" onClick={() => void leaveParty()} disabled={busy}>
           {t.common.leave}
         </Button>
+        <ShareResult
+          facts={{
+            game: 'guess',
+            position: me ? myIndex + 1 : null,
+            players: ranking.length,
+            points: me?.stats.totalPoints ?? 0,
+            correct: me?.stats.correct ?? 0,
+          }}
+        />
         {isHost ? (
           <Button variant="green" size="lg" icon="↻" onClick={() => void handleRematch()} disabled={busy}>
             {t.game.rematch}
