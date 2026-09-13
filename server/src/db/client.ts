@@ -51,7 +51,7 @@ async function openPostgres(url: string): Promise<DatabaseHandle> {
    * Pocas conexiones a propósito: hay una sola instancia y las consultas son
    * cortas. El SSL lo pide la propia URL (`sslmode=require`), como la entrega Neon.
    */
-  const pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 30_000 });
+  const pool = new Pool({ connectionString: verifyFullSsl(url), max: 5, idleTimeoutMillis: 30_000 });
   // Un error de una conexión ociosa (la base reinició, se cortó la red) no debe
   // tirar el proceso: el pool la descarta y abre otra en la próxima consulta.
   pool.on('error', (error) => log.error('Conexión de Postgres caída', error.message));
@@ -60,6 +60,27 @@ async function openPostgres(url: string): Promise<DatabaseHandle> {
   await migrate(db, { migrationsFolder: config.migrationsDir });
   log.info('Postgres conectado y con las migraciones al día');
   return { db: db as unknown as Database, close: () => pool.end() };
+}
+
+/**
+ * Neon entrega la URL con `sslmode=require`. Hoy `pg` ya lo trata como
+ * `verify-full` (cifra y verifica el certificado y el host), pero avisa en cada
+ * arranque que en la próxima versión mayor `require` pasará a no verificar nada.
+ * Se pide `verify-full` explícito: mismo comportamiento de hoy, sin el aviso, y
+ * sin quedar más expuestos el día que se actualice `pg`. Quien haya elegido
+ * `uselibpqcompat` a propósito se respeta.
+ */
+export function verifyFullSsl(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  const mode = parsed.searchParams.get('sslmode');
+  if (parsed.searchParams.has('uselibpqcompat') || !mode || !['prefer', 'require', 'verify-ca'].includes(mode)) return url;
+  parsed.searchParams.set('sslmode', 'verify-full');
+  return parsed.toString();
 }
 
 async function openPglite(dataDir?: string): Promise<DatabaseHandle> {
