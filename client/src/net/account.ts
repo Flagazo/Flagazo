@@ -11,6 +11,7 @@ import type {
   VerifyEmailRequest,
 } from '@flagazo/shared';
 import { t } from '../i18n';
+import { embedded } from '../lib/embed';
 import { useAppStore } from '../store/useAppStore';
 import { apiRequest } from './api';
 import type { ClientApiResult } from './api';
@@ -28,6 +29,11 @@ function locale(): EmailLocale {
  * como invitado no depende de esto y sigue funcionando.
  */
 export async function loadAccount() {
+  // Dentro de otra página las cuentas no andan (ver lib/embed): se juega como invitado.
+  if (embedded) {
+    useAppStore.getState().setAccount({ enabled: false, user: null, providers: [], loaded: true });
+    return;
+  }
   const oauthReturn = takeOAuthReturn();
   const result = await apiRequest<MeResponse>('/me');
   const store = useAppStore.getState();

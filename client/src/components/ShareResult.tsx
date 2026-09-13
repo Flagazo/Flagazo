@@ -41,14 +41,19 @@ export function ShareResult({ facts }: { facts: ShareFacts }) {
     setSharing(true);
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Flagazo', text, url });
-      } else {
-        await navigator.clipboard.writeText(`${text} ${url}`);
-        pushToast(texts.copied, 'success');
+        try {
+          await navigator.share({ title: 'Flagazo', text, url });
+          return;
+        } catch (error) {
+          // Cerrar el menú de compartir no es un error. Otro error (por ejemplo,
+          // dentro de itch.io, donde el iframe no deja compartir) prueba copiando.
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
       }
-    } catch (error) {
-      // Cerrar el menú de compartir no es un error.
-      if (!(error instanceof DOMException && error.name === 'AbortError')) pushToast(texts.failed, 'error');
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      pushToast(texts.copied, 'success');
+    } catch {
+      pushToast(texts.failed, 'error');
     } finally {
       setSharing(false);
     }

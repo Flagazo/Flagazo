@@ -63,6 +63,7 @@ export const en = {
   },
 
   nickname: {
+    openSite: 'Want to save your stats and join the ranking? Play at flagazo.com ↗',
     tagline: 'How many flags can you name before your friends do?',
     label: 'Pick your nickname',
     /* El nombre lo elige `lib/exampleName.ts`, distinto en cada carga. */

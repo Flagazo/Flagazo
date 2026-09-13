@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { Logo } from '../components/Logo';
 import { useT } from '../i18n';
 import { errorMessage } from '../lib/errors';
+import { embedded } from '../lib/embed';
 import { EXAMPLE_NAME } from '../lib/exampleName';
 import { storage } from '../lib/storage';
 import { submitNickname } from '../net/connection';
@@ -121,6 +122,14 @@ export function NicknameScreen() {
             </Button>
           </div>
         </div>
+      )}
+
+      {embedded && (
+        <p className="account-prompt account-prompt__text">
+          <a className="account-prompt__site" href="https://flagazo.com/?ref=embed" target="_blank" rel="noopener">
+            {t.nickname.openSite}
+          </a>
+        </p>
       )}
     </main>
   );

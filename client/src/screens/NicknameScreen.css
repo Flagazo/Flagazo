@@ -129,6 +129,18 @@
   white-space: nowrap; /* si no entra en una línea, el botón baja entero */
 }
 
+/* Dentro de itch.io: la cuenta se usa en el sitio, en otra pestaña. */
+.account-prompt__site {
+  color: var(--cyan);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.account-prompt__site:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .account-prompt__actions {
   display: flex;
   flex-wrap: wrap;

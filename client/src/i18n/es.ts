@@ -58,6 +58,7 @@ export const es: Dictionary = {
   },
 
   nickname: {
+    openSite: '¿Quieres guardar tus estadísticas y entrar al ranking? Juega en flagazo.com ↗',
     tagline: '¿Cuántas banderas reconoces antes que tus amigos?',
     label: 'Elige tu nickname',
     placeholder: (name) => `Ej: ${name}`,
