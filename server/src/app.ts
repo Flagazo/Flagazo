@@ -91,7 +91,8 @@ export function createGameServer(options: GameServerOptions = {}) {
     const indexHtml = path.join(config.clientDist, 'index.html');
     app.use(express.static(config.clientDist, { index: false, maxAge: '1h' }));
     app.use((req, res, next) => {
-      if (req.method !== 'GET' || !req.accepts('html')) return next();
+      // HEAD también: buscadores y verificadores de links preguntan así si la página existe.
+      if ((req.method !== 'GET' && req.method !== 'HEAD') || !req.accepts('html')) return next();
       res.sendFile(indexHtml);
     });
   }
