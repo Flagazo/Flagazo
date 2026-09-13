@@ -44,7 +44,8 @@ export function RankingScreen() {
     };
   }, [metric, period]);
 
-  const numbers = new Intl.NumberFormat(locale === 'es' ? 'es' : 'en');
+  // 'always': en español "9800" saldría sin punto al lado de "12.840".
+  const numbers = new Intl.NumberFormat(locale === 'es' ? 'es' : 'en', { useGrouping: 'always' });
   const periodName = (value: string) => {
     if (value === ALL_TIME_PERIOD) return t.ranking.allTime;
     const [year, month] = value.split('-').map(Number);

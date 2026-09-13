@@ -6,6 +6,7 @@ import type { Dictionary } from '../../i18n';
 import { errorMessage } from '../../lib/errors';
 import { startOAuth } from '../../net/account';
 import type { ClientApiResult } from '../../net/api';
+import './OAuthButtons.css';
 
 /** Piezas que comparten todos los pasos de la pantalla de cuenta. */
 
@@ -196,15 +197,18 @@ function DiscordLogo() {
 /**
  * "Continuar con Google" y "Continuar con Discord". Solo los que el servidor
  * tiene configurados; sin ninguno, no se dibuja nada (ni el separador).
+ * `divider` agrega el "o con tu email" que los separa del formulario.
  */
 export function OAuthButtons({
   providers,
   remember,
   t,
+  divider = true,
 }: {
   providers: readonly OAuthProvider[];
   remember: boolean;
   t: Dictionary;
+  divider?: boolean;
 }) {
   const [leaving, setLeaving] = useState<OAuthProvider | null>(null);
   // Si vuelve con el botón "atrás", el navegador puede restaurar la página tal
@@ -236,9 +240,11 @@ export function OAuthButtons({
           </button>
         ))}
       </div>
-      <div className="auth-divider" role="separator">
-        <span>{t.auth.orWithEmail}</span>
-      </div>
+      {divider && (
+        <div className="auth-divider" role="separator">
+          <span>{t.auth.orWithEmail}</span>
+        </div>
+      )}
     </>
   );
 }

@@ -186,22 +186,25 @@ describe('foto de perfil', () => {
 });
 
 describe('foto del proveedor', () => {
-  it('usa la foto de Google vinculada', async () => {
+  it.each([
+    ['google', 'https://lh3.googleusercontent.com/a/foto-de-google'],
+    ['discord', 'https://cdn.discordapp.com/avatars/123/foto-de-discord.png'],
+  ] as const)('usa la foto de %s vinculada', async (provider, avatarUrl) => {
     const { user, cookie } = await account();
     await database.db.insert(authIdentities).values({
       userId: user.id,
-      provider: 'google',
-      providerUserId: `g-foto-${counter}`,
-      avatarUrl: 'https://lh3.googleusercontent.com/a/foto-de-google',
+      provider,
+      providerUserId: `${provider}-foto-${counter}`,
+      avatarUrl,
     });
 
     const me = await json<{ accountsEnabled: boolean; account: AccountInfo }>('GET', '/me', cookie);
-    expect(me.body.ok && me.body.data.account.providerAvatars).toEqual(['google']);
+    expect(me.body.ok && me.body.data.account.providerAvatars).toEqual([provider]);
 
-    const result = await json<{ account: AccountInfo }>('POST', '/me/avatar/provider', cookie, { provider: 'google' });
+    const result = await json<{ account: AccountInfo }>('POST', '/me/avatar/provider', cookie, { provider });
     expect(result.status).toBe(200);
     expect(result.body.ok && result.body.data.account.avatarUrl).toMatch(/\.webp\?v=1$/);
-    expect(downloads).toContain('https://lh3.googleusercontent.com/a/foto-de-google');
+    expect(downloads).toContain(avatarUrl);
   });
 
   it('nunca baja fotos de hosts que no son Google ni Discord (SSRF)', async () => {

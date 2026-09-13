@@ -9,6 +9,7 @@ import { EXAMPLE_NAME } from '../lib/exampleName';
 import { storage } from '../lib/storage';
 import { submitNickname } from '../net/connection';
 import { useAppStore } from '../store/useAppStore';
+import { OAuthButtons } from './auth/parts';
 import './NicknameScreen.css';
 
 export function NicknameScreen() {
@@ -18,6 +19,7 @@ export function NicknameScreen() {
   const openAuth = useAppStore((s) => s.openAuth);
   const accountsEnabled = useAppStore((s) => s.account.loaded && s.account.enabled);
   const signedIn = useAppStore((s) => s.account.user !== null);
+  const providers = useAppStore((s) => s.account.providers);
   const t = useT();
 
   const [value, setValue] = useState(() => currentNickname ?? storage.getNickname() ?? '');
@@ -100,10 +102,16 @@ export function NicknameScreen() {
         </Button>
       </form>
 
-      {/* La cuenta es un extra: va debajo, y jugar como invitado sigue siendo lo primero. */}
+      {/*
+        La cuenta es un extra: va debajo, y jugar como invitado sigue siendo lo
+        primero. Google y Discord están a un toque, sin pasar por otra pantalla.
+      */}
       {accountsEnabled && !signedIn && (
         <div className="account-prompt">
           <p className="account-prompt__text">{t.auth.prompt}</p>
+          <div className="account-prompt__oauth">
+            <OAuthButtons providers={providers} remember t={t} divider={false} />
+          </div>
           <div className="account-prompt__actions">
             <Button variant="ghost" onClick={() => openAuth('login')}>
               {t.auth.signIn}

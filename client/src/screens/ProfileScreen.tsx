@@ -250,7 +250,8 @@ export function ProfileScreen() {
 
 /** Las tarjetas de estadísticas. Mientras cargan, guiones. */
 function statCards(stats: UserStatsSummary | null, t: ReturnType<typeof useT>, locale: string): [string, string][] {
-  const numbers = new Intl.NumberFormat(locale === 'es' ? 'es' : 'en');
+  // 'always': en español "9800" saldría sin punto al lado de "12.840".
+  const numbers = new Intl.NumberFormat(locale === 'es' ? 'es' : 'en', { useGrouping: 'always' });
   const show = (value: number | undefined) => (value === undefined ? '—' : numbers.format(value));
   const average = stats?.averageAnswerMs;
   return [

@@ -111,6 +111,24 @@
   color: var(--text-soft);
 }
 
+/* Mismo ancho que la tarjeta de arriba; de a dos si entran, uno abajo del otro si no. */
+.account-prompt__oauth {
+  width: min(100%, 420px);
+}
+
+.account-prompt__oauth .oauth-buttons {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.account-prompt__oauth .oauth-button {
+  flex: 1 1 180px;
+  height: 46px;
+  padding: 0 14px;
+  font-size: 0.92rem;
+  white-space: nowrap; /* si no entra en una línea, el botón baja entero */
+}
+
 .account-prompt__actions {
   display: flex;
   flex-wrap: wrap;

@@ -317,6 +317,27 @@ describe('Continuar con Discord', () => {
     });
     const identity = await database.db.query.authIdentities.findFirst({ where: eq(authIdentities.providerUserId, id) });
     expect(identity?.avatarUrl).toBe(`https://cdn.discordapp.com/avatars/${id}/a1b2c3d4e5.png?size=256`);
+    // Y arranca con esa foto como avatar.
+    expect((await me(result.session)).account!.avatarUrl).toMatch(/\.webp\?v=1$/);
+  });
+
+  it('la segunda vez entra a la misma cuenta', async () => {
+    const id = `4${unique()}000555`;
+    const first = await oauthFlow('discord', { id, username: 'vuelve', email: `vuelve${counter}@example.com`, verified: true });
+    const second = await oauthFlow('discord', { id, username: 'vuelve', email: `vuelve${counter}@example.com`, verified: true });
+    expect(second.auth).toBe('ok');
+    expect((await me(second.session)).account!.id).toBe((await me(first.session)).account!.id);
+  });
+
+  it('vincula con una cuenta existente de email verificado, sin duplicarla', async () => {
+    const email = `condiscord${unique()}@example.com`;
+    const { username } = await passwordAccount(email, true);
+    const before = (await database.db.select().from(users)).length;
+
+    const result = await oauthFlow('discord', { id: `3${counter}000666`, username: 'otro', email, verified: true });
+    expect(result.auth).toBe('ok');
+    expect((await me(result.session)).account).toMatchObject({ username, email, hasPassword: true, providers: ['discord'] });
+    expect((await database.db.select().from(users)).length).toBe(before);
   });
 
   it('con un email no verificado en Discord no se apropia de una cuenta existente', async () => {
