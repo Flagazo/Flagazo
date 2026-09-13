@@ -218,21 +218,28 @@ describe('respuestas', () => {
   });
 
   it('una respuesta ambigua no gasta el intento', () => {
-    build().start();
+    // Banderas fijas: sorteadas, la de los Congos salía una vez cada cien partidas
+    // y la prueba solo miraba el caso ambiguo en esas.
+    buildWith(['CD', 'FR', 'JP', 'AR']).start();
     vi.advanceTimersByTime(COUNTDOWN_MS);
 
-    // Forzamos que la bandera activa sea la RD del Congo.
     const congo = engine.answer('ana', 'Congo');
-    if (engine.currentCountryId === 'CD' || engine.currentCountryId === 'CG') {
-      expect(congo).toEqual({
-        verdict: 'ambiguous',
-        options: ['República Democrática del Congo', 'República del Congo'],
-      });
-      expect(snap().players.find((p) => p.playerId === 'ana')!.answered).toBe(false);
-    } else {
-      // Para cualquier otra bandera, "Congo" es simplemente un error.
-      expect(congo).toEqual({ verdict: 'wrong' });
-    }
+    expect(congo).toEqual({
+      verdict: 'ambiguous',
+      options: expect.arrayContaining([
+        expect.objectContaining({ es: 'República Democrática del Congo' }),
+        expect.objectContaining({ es: 'República del Congo' }),
+      ]),
+    });
+    expect(snap().players.find((p) => p.playerId === 'ana')!.answered).toBe(false);
+    // Y puede volver a probar con el nombre completo.
+    expect(engine.answer('ana', 'República Democrática del Congo')).toEqual({ verdict: 'correct' });
+  });
+
+  it('para cualquier otra bandera, "Congo" es simplemente un error', () => {
+    buildWith(['FR', 'JP', 'AR', 'CL']).start();
+    vi.advanceTimersByTime(COUNTDOWN_MS);
+    expect(engine.answer('ana', 'Congo')).toEqual({ verdict: 'wrong' });
   });
 
   it('no se puede responder fuera de la fase de bandera', () => {
